@@ -1,11 +1,20 @@
 ---
 name: imagn
-description: Use when the user wants to generate, create, edit, or modify an image — phrases like "generate an image of...", "create a picture of...", "make an image showing...", "edit this photo to...", "change the background of...", "turn this into a...". Also fires on explicit `/imagn` invocation. Skip for metaphorical uses ("paint a picture in your mind") or non-image tasks.
+description: Generate or edit images with multi-model AI (OpenAI, Gemini Nano Banana). Use when the user says "generate an image", "create a picture", "make an image", "edit this photo", "change the background", or invokes /imagn.
+when_to_use: Trigger on image generation or editing requests. Skip for metaphorical phrases ("paint a picture in your mind") or non-visual tasks.
+disable-model-invocation: false
+allowed-tools: Bash(command -v *) Bash(imagn *) Bash(bun install *) Bash(jq *)
+compatibility: Requires bun runtime and either OPENAI_API_KEY or GEMINI_API_KEY in env.
+metadata:
+  version: "0.1.0"
+  repository: github.com/henriquerferrer/imagn
 ---
 
 # imagn
 
-Generate or edit images using the `imagn` CLI. The CLI dispatches to OpenAI (`gpt-image-1.5`, `gpt-image-2`) and Google (`gemini-2.5-flash-image` aka Nano Banana). See `reference.md` for the full flag list.
+> **Side-effect notice:** This skill makes paid API calls (OpenAI, Gemini) and writes image files. It auto-fires on natural-language image requests. To restrict to manual `/imagn` invocation only, set `disable-model-invocation: true` in this skill's frontmatter.
+
+Generate or edit images using the `imagn` CLI. The CLI dispatches to OpenAI (`gpt-image-1.5`, `gpt-image-2`) and Google (`gemini-2.5-flash-image` aka Nano Banana). See [reference.md](reference.md) for the full flag list, supported models, and exit codes.
 
 ## Step 1 — Pre-flight: install detection
 
@@ -58,6 +67,8 @@ From `{ "results": [...], "errors": [...] }`:
 |---|---|
 | 2 (`MissingApiKey`) | Tell the user which env var to set: `export OPENAI_API_KEY=...` or `export GEMINI_API_KEY=...`. |
 | 3 (`UnsupportedFeature`) | Re-run with a model that supports the feature (the message names valid models). |
+| 4 (`InvalidArgs`) | Surface the validation error verbatim; ask the user to correct flags or arguments. |
+| 5 (`RateLimited`) | Tell the user to wait 30–60 seconds and retry the same command. |
 | 6 (`ProviderError`) | Surface the provider's message. Do not retry without user input. |
 
 ## Examples
