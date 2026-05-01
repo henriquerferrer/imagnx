@@ -9,6 +9,7 @@ export interface ModelCapabilities {
   validSizes: ReadonlyArray<Size>;
   defaultQuality: Quality;
   maxRefImages: number;
+  enabled?: boolean;
 }
 
 const CAPABILITIES: Record<string, ModelCapabilities> = {
@@ -30,6 +31,7 @@ const CAPABILITIES: Record<string, ModelCapabilities> = {
     validSizes: ["1024x1024", "1792x1024", "1024x1792"],
     defaultQuality: "auto",
     maxRefImages: 0,
+    enabled: false,
   },
   "gemini-2.5-flash-image": {
     modelId: "gemini-2.5-flash-image",
@@ -42,7 +44,9 @@ const CAPABILITIES: Record<string, ModelCapabilities> = {
   },
 };
 
-export const KNOWN_MODELS: ReadonlyArray<string> = Object.keys(CAPABILITIES);
+export const KNOWN_MODELS: ReadonlyArray<string> = Object.values(CAPABILITIES)
+  .filter((c) => c.enabled !== false)
+  .map((c) => c.modelId);
 
 export function modelCapabilities(modelId: string): ModelCapabilities {
   const cap = CAPABILITIES[modelId];
