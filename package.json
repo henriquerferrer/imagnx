@@ -1,0 +1,26 @@
+{
+  "name": "imgen",
+  "version": "0.1.0",
+  "description": "Multi-model image generation CLI",
+  "type": "module",
+  "bin": {
+    "imgen": "./src/cli.ts"
+  },
+  "scripts": {
+    "start": "bun run src/cli.ts",
+    "test": "bun test",
+    "test:integration": "bun test tests/integration",
+    "smoke": "bun run scripts/smoke.ts"
+  },
+  "dependencies": {
+    "citty": "^0.1.6",
+    "@iarna/toml": "^2.2.5"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  }
+}
