@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createGeminiProvider } from "../../src/providers/gemini";
 import { installFetchMock } from "../helpers/fetch-mock";
+import { ProviderError } from "../../src/errors";
 
 const FIX = (name: string) =>
   readFileSync(join(import.meta.dir, "fixtures", name), "utf8");
@@ -14,7 +15,7 @@ describe("gemini provider", () => {
     restore = undefined;
   });
 
-  it("generate posts to generateContent endpoint with API key", async () => {
+  it("generate posts to generateContent endpoint with API key in header", async () => {
     const mock = installFetchMock([
       {
         url: "",
@@ -29,7 +30,10 @@ describe("gemini provider", () => {
       prompt: "a fox",
     });
     expect(mock.calls[0]!.url).toContain("generateContent");
-    expect(mock.calls[0]!.url).toContain("key=g-test");
+    expect(mock.calls[0]!.url).not.toContain("key=");
+    const init = mock.calls[0]!.init!;
+    const headers = init.headers as Record<string, string>;
+    expect(headers["x-goog-api-key"]).toBe("g-test");
     expect(results).toHaveLength(1);
     expect(results[0]!.mimeType).toBe("image/png");
     expect(results[0]!.bytes.length).toBeGreaterThan(0);
@@ -73,5 +77,47 @@ describe("gemini provider", () => {
     await expect(
       provider.generate("gemini-2.5-flash-image", { prompt: "x" }),
     ).rejects.toThrow();
+  });
+
+  it("maps HTML response (503) to ProviderError with useful message", async () => {
+    const mock = installFetchMock([
+      {
+        url: "",
+        responseBody: "<html><body>Service Unavailable</body></html>",
+        responseStatus: 503,
+        responseHeaders: { "content-type": "text/html" },
+      },
+    ]);
+    restore = mock.restore;
+    const provider = createGeminiProvider({ apiKey: "g-test" });
+    let caught: unknown;
+    try {
+      await provider.generate("gemini-2.5-flash-image", { prompt: "x" });
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(ProviderError);
+    expect((caught as ProviderError).message).toMatch(/invalid json/i);
+  });
+
+  it("maps malformed JSON response to ProviderError with missing 'candidates' message", async () => {
+    const mock = installFetchMock([
+      {
+        url: "",
+        responseBody: JSON.stringify({ oops: true }),
+        responseStatus: 200,
+        responseHeaders: { "content-type": "application/json" },
+      },
+    ]);
+    restore = mock.restore;
+    const provider = createGeminiProvider({ apiKey: "g-test" });
+    let caught: unknown;
+    try {
+      await provider.generate("gemini-2.5-flash-image", { prompt: "x" });
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(ProviderError);
+    expect((caught as ProviderError).message).toMatch(/missing/i);
   });
 });

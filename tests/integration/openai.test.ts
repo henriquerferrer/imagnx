@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createOpenAIProvider } from "../../src/providers/openai";
 import { installFetchMock } from "../helpers/fetch-mock";
+import { ProviderError } from "../../src/errors";
 
 const FIX = (name: string) =>
   readFileSync(join(import.meta.dir, "fixtures", name), "utf8");
@@ -106,5 +107,47 @@ describe("openai provider", () => {
     await expect(
       provider.generate("gpt-image-1.5", { prompt: "x" }),
     ).rejects.toThrow(/rate/i);
+  });
+
+  it("maps HTML response (503) to ProviderError with useful message", async () => {
+    const mock = installFetchMock([
+      {
+        url: "",
+        responseBody: "<html><body>Service Unavailable</body></html>",
+        responseStatus: 503,
+        responseHeaders: { "content-type": "text/html" },
+      },
+    ]);
+    restore = mock.restore;
+    const provider = createOpenAIProvider({ apiKey: "sk-test" });
+    let caught: unknown;
+    try {
+      await provider.generate("gpt-image-1.5", { prompt: "x" });
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(ProviderError);
+    expect((caught as ProviderError).message).toMatch(/invalid json/i);
+  });
+
+  it("maps malformed JSON response to ProviderError with missing 'data' message", async () => {
+    const mock = installFetchMock([
+      {
+        url: "",
+        responseBody: JSON.stringify({ oops: true }),
+        responseStatus: 200,
+        responseHeaders: { "content-type": "application/json" },
+      },
+    ]);
+    restore = mock.restore;
+    const provider = createOpenAIProvider({ apiKey: "sk-test" });
+    let caught: unknown;
+    try {
+      await provider.generate("gpt-image-1.5", { prompt: "x" });
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(ProviderError);
+    expect((caught as ProviderError).message).toMatch(/missing.*data/i);
   });
 });

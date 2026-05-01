@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import type {
   EditInput,
   GenerateInput,
@@ -5,6 +6,7 @@ import type {
   Provider,
 } from "./types";
 import { ProviderError, RateLimited } from "../errors";
+import { getProp } from "../narrow";
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta";
 
@@ -21,38 +23,79 @@ export function createGeminiProvider(opts: GeminiProviderOptions): Provider {
     parts: Array<Record<string, unknown>>,
     promptForResult: string,
   ): Promise<ImageResult[]> {
-    const url = `${baseUrl}/models/${modelId}:generateContent?key=${opts.apiKey}`;
+    const url = `${baseUrl}/models/${modelId}:generateContent`;
     const body = {
       contents: [{ parts }],
       generationConfig: { responseModalities: ["IMAGE"] },
     };
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+
+    const timeoutMs = Number(process.env.IMAGN_REQUEST_TIMEOUT_MS) || 120_000;
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": opts.apiKey,
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "TimeoutError") {
+        throw new ProviderError("google", `Request timed out after ${timeoutMs / 1000}s`);
+      }
+      throw e;
+    }
+
     if (res.status === 429) {
       throw new RateLimited("google");
     }
-    const data: any = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const msg = data?.error?.message ?? `HTTP ${res.status}`;
-      throw new ProviderError("google", msg);
+
+    let data: unknown;
+    try {
+      data = await res.json();
+    } catch (e) {
+      throw new ProviderError(
+        "google",
+        `Invalid JSON response (HTTP ${res.status}): ${e instanceof Error ? e.message : String(e)}`,
+      );
     }
+
+    if (!res.ok) {
+      const errObj = getProp(data, "error");
+      const msg =
+        (typeof getProp(errObj, "message") === "string"
+          ? getProp(errObj, "message")
+          : undefined) ?? `HTTP ${res.status}`;
+      throw new ProviderError("google", msg as string);
+    }
+
+    const candidates = getProp(data, "candidates");
+    if (!Array.isArray(candidates)) {
+      throw new ProviderError("google", "Malformed response: missing 'candidates' array");
+    }
+
     const out: ImageResult[] = [];
-    for (const cand of data.candidates ?? []) {
-      for (const part of cand.content?.parts ?? []) {
-        const inline = part.inlineData;
-        if (!inline?.data) continue;
-        const bytes = Uint8Array.from(atob(inline.data), (c) => c.charCodeAt(0));
+    for (const cand of candidates) {
+      const content = getProp(cand, "content");
+      const parts = getProp(content, "parts");
+      if (!Array.isArray(parts)) continue;
+      for (const part of parts) {
+        const inline = getProp(part, "inlineData");
+        const inlineData = getProp(inline, "data");
+        if (typeof inlineData !== "string") continue;
+        const mimeType = getProp(inline, "mimeType");
+        const bytes = Uint8Array.from(atob(inlineData), (c) => c.charCodeAt(0));
         out.push({
           bytes,
-          mimeType: (inline.mimeType ?? "image/png") as ImageResult["mimeType"],
+          mimeType: (typeof mimeType === "string" ? mimeType : "image/png") as ImageResult["mimeType"],
           modelId,
           promptUsed: promptForResult,
         });
       }
     }
+
     if (out.length === 0) {
       throw new ProviderError("google", "Empty response: no images returned");
     }
@@ -71,7 +114,7 @@ export function createGeminiProvider(opts: GeminiProviderOptions): Provider {
         parts.push({
           inlineData: {
             mimeType: "image/png",
-            data: btoa(String.fromCharCode(...ref)),
+            data: Buffer.from(ref).toString("base64"),
           },
         });
       }

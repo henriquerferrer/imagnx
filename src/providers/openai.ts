@@ -5,6 +5,7 @@ import type {
   Provider,
 } from "./types";
 import { ProviderError, RateLimited } from "../errors";
+import { getProp } from "../narrow";
 
 const BASE = "https://api.openai.com";
 
@@ -26,14 +27,24 @@ export function createOpenAIProvider(opts: OpenAIProviderOptions): Provider {
     if (input.quality) body.quality = input.quality;
     body.response_format = "b64_json";
 
-    const res = await fetch(`${baseUrl}/v1/images/generations`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${opts.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
+    const timeoutMs = Number(process.env.IMAGN_REQUEST_TIMEOUT_MS) || 120_000;
+    let res: Response;
+    try {
+      res = await fetch(`${baseUrl}/v1/images/generations`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${opts.apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "TimeoutError") {
+        throw new ProviderError("openai", `Request timed out after ${timeoutMs / 1000}s`);
+      }
+      throw e;
+    }
     return parseImagesResponse(res, modelId, input.prompt);
   }
 
@@ -56,11 +67,21 @@ export function createOpenAIProvider(opts: OpenAIProviderOptions): Provider {
       form.set("mask", new Blob([input.mask], { type: "image/png" }), "mask.png");
     }
 
-    const res = await fetch(`${baseUrl}/v1/images/edits`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${opts.apiKey}` },
-      body: form,
-    });
+    const timeoutMs = Number(process.env.IMAGN_REQUEST_TIMEOUT_MS) || 120_000;
+    let res: Response;
+    try {
+      res = await fetch(`${baseUrl}/v1/images/edits`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${opts.apiKey}` },
+        body: form,
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "TimeoutError") {
+        throw new ProviderError("openai", `Request timed out after ${timeoutMs / 1000}s`);
+      }
+      throw e;
+    }
     return parseImagesResponse(res, modelId, input.prompt);
   }
 
@@ -81,15 +102,35 @@ async function parseImagesResponse(
     const ra = res.headers.get("retry-after");
     throw new RateLimited("openai", ra ? Number(ra) * 1000 : undefined);
   }
-  const data = await res.json().catch(() => ({}) as any);
-  if (!res.ok) {
-    const msg = (data as any)?.error?.message ?? `HTTP ${res.status}`;
-    throw new ProviderError("openai", msg);
+
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch (e) {
+    throw new ProviderError(
+      "openai",
+      `Invalid JSON response (HTTP ${res.status}): ${e instanceof Error ? e.message : String(e)}`,
+    );
   }
+
+  if (!res.ok) {
+    const msg =
+      (typeof getProp(getProp(data, "error"), "message") === "string"
+        ? getProp(getProp(data, "error"), "message")
+        : undefined) ?? `HTTP ${res.status}`;
+    throw new ProviderError("openai", msg as string);
+  }
+
+  const dataArray = getProp(data, "data");
+  if (!Array.isArray(dataArray)) {
+    throw new ProviderError("openai", "Malformed response: missing 'data' array");
+  }
+
   const items: ImageResult[] = [];
-  for (const item of (data as any).data ?? []) {
-    if (!item.b64_json) continue;
-    const bytes = Uint8Array.from(atob(item.b64_json), (c) => c.charCodeAt(0));
+  for (const item of dataArray) {
+    const b64 = getProp(item, "b64_json");
+    if (typeof b64 !== "string") continue;
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
     items.push({
       bytes,
       mimeType: "image/png",
@@ -97,8 +138,9 @@ async function parseImagesResponse(
       promptUsed: prompt,
     });
   }
+
   if (items.length === 0) {
-    throw new ProviderError("openai", "Empty response: no images returned");
+    throw new ProviderError("openai", "No images in response");
   }
   return items;
 }
