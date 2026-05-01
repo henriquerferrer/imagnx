@@ -15,7 +15,7 @@ export interface ResolvedConfig {
 
 export const HARD_DEFAULTS: ResolvedConfig = {
   defaultModel: "gpt-image-1.5",
-  outputDir: "~/Pictures/imgen",
+  outputDir: "~/Pictures/imagn",
   defaultSize: "auto",
   defaultQuality: "high",
   openAfter: false,
@@ -90,7 +90,7 @@ export function resolveConfig(input: ResolveInput): ResolvedConfig {
 
 export function loadConfigFile(env: Record<string, string | undefined>): string | undefined {
   const xdg = env.XDG_CONFIG_HOME ?? join(env.HOME ?? homedir(), ".config");
-  const path = join(xdg, "imgen", "config.toml");
+  const path = join(xdg, "imagn", "config.toml");
   if (existsSync(path)) return readFileSync(path, "utf8");
   return undefined;
 }

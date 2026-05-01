@@ -10,7 +10,7 @@ import { MissingApiKey } from "../../src/errors";
 describe("config", () => {
   it("HARD_DEFAULTS contain expected baseline", () => {
     expect(HARD_DEFAULTS.defaultModel).toBe("gpt-image-1.5");
-    expect(HARD_DEFAULTS.outputDir).toBe("~/Pictures/imgen");
+    expect(HARD_DEFAULTS.outputDir).toBe("~/Pictures/imagn");
     expect(HARD_DEFAULTS.defaultSize).toBe("auto");
     expect(HARD_DEFAULTS.defaultQuality).toBe("high");
     expect(HARD_DEFAULTS.openAfter).toBe(false);
@@ -23,10 +23,10 @@ describe("config", () => {
   it("parseTomlConfig parses file overrides", () => {
     const cfg = parseTomlConfig(`
 default_model = "gemini-2.5-flash-image"
-output_dir = "/tmp/imgen"
+output_dir = "/tmp/imagn"
 `);
     expect(cfg.defaultModel).toBe("gemini-2.5-flash-image");
-    expect(cfg.outputDir).toBe("/tmp/imgen");
+    expect(cfg.outputDir).toBe("/tmp/imagn");
   });
 
   it("resolveConfig: hard defaults win when nothing else", () => {
@@ -63,11 +63,11 @@ output_dir = "/tmp/imgen"
 
   it("resolveConfig expands ~ in outputDir", () => {
     const c = resolveConfig({
-      tomlText: 'output_dir = "~/Pictures/imgen"',
+      tomlText: 'output_dir = "~/Pictures/imagn"',
       env: { HOME: "/Users/test" },
       flags: {},
     });
-    expect(c.outputDir).toBe("/Users/test/Pictures/imgen");
+    expect(c.outputDir).toBe("/Users/test/Pictures/imagn");
   });
 
   it("apiKeyFor returns key from env", () => {

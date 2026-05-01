@@ -5,7 +5,7 @@ export abstract class ImgenError extends Error {
 export class MissingApiKey extends ImgenError {
   readonly exitCode = 2;
   constructor(public readonly envVar: string) {
-    super(`${envVar} is not set. Run \`imgen config\` to check provider keys.`);
+    super(`${envVar} is not set. Run \`imagn config\` to check provider keys.`);
   }
 }
 

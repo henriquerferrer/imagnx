@@ -402,7 +402,7 @@ const editCmd = defineCommand({
     const positionals: string[] = args._;
     if (positionals.length < 2) {
       throw new InvalidArgs(
-        "edit requires at least one reference image and a prompt. Usage: imgen edit <ref...> <prompt>",
+        "edit requires at least one reference image and a prompt. Usage: imagn edit <ref...> <prompt>",
       );
     }
     const prompt = positionals[positionals.length - 1]!;
@@ -455,18 +455,18 @@ const modelsCmd = defineCommand({
 const initCmd = defineCommand({
   meta: {
     name: "init",
-    description: "Write a starter ~/.config/imgen/config.toml",
+    description: "Write a starter ~/.config/imagn/config.toml",
   },
   async run() {
     const home = process.env.HOME ?? "";
     const xdg = process.env.XDG_CONFIG_HOME ?? `${home}/.config`;
-    const dir = `${xdg}/imgen`;
+    const dir = `${xdg}/imagn`;
     const path = `${dir}/config.toml`;
     const { mkdir, writeFile } = await import("node:fs/promises");
     await mkdir(dir, { recursive: true });
-    const sample = `# imgen configuration
+    const sample = `# imagn configuration
 default_model    = "gpt-image-1.5"
-output_dir       = "~/Pictures/imgen"
+output_dir       = "~/Pictures/imagn"
 default_size     = "auto"
 default_quality  = "high"
 open_after       = false
@@ -510,7 +510,7 @@ const configCmd = defineCommand({
 
 const main = defineCommand({
   meta: {
-    name: "imgen",
+    name: "imagn",
     version: "0.1.0",
     description: "Multi-model image generation CLI",
   },
@@ -562,7 +562,7 @@ const main = defineCommand({
 // ---------------------------------------------------------------------------
 
 // Citty tries to match the first non-flag positional against subcommand names.
-// When the user does `imgen "my prompt"`, the prompt string won't match any
+// When the user does `imagn "my prompt"`, the prompt string won't match any
 // subcommand, causing an "Unknown command" error. We pre-process argv to inject
 // the `generate` subcommand when the first positional is not a known subcommand.
 const KNOWN_SUBCOMMANDS = new Set(["generate", "edit", "models", "init", "config"]);

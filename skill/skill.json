@@ -1,7 +1,7 @@
 {
-  "name": "imgen",
+  "name": "imagn",
   "version": "0.1.0",
-  "description": "Multi-model image generation and editing via the imgen CLI.",
+  "description": "Multi-model image generation and editing via the imagn CLI.",
   "tags": ["images", "openai", "gemini", "nano-banana", "cli-wrapper"],
   "agents": ["claude-code", "cursor", "codex"],
   "files": ["SKILL.md", "reference.md"]

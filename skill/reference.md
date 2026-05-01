@@ -1,13 +1,13 @@
-# imgen reference
+# imagn reference
 
 ## Commands
 
-- `imgen "<prompt>" [flags]` — generation shorthand.
-- `imgen generate "<prompt>" [flags]` — explicit form.
-- `imgen edit <refs...> "<prompt>" [flags]` — edits with reference images.
-- `imgen models` — list models per provider with capabilities.
-- `imgen init` — write a starter `~/.config/imgen/config.toml`.
-- `imgen config` — print resolved config and key status.
+- `imagn "<prompt>" [flags]` — generation shorthand.
+- `imagn generate "<prompt>" [flags]` — explicit form.
+- `imagn edit <refs...> "<prompt>" [flags]` — edits with reference images.
+- `imagn models` — list models per provider with capabilities.
+- `imagn init` — write a starter `~/.config/imagn/config.toml`.
+- `imagn config` — print resolved config and key status.
 
 ## Flags
 

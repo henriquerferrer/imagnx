@@ -1,10 +1,10 @@
 {
-  "name": "imgen",
+  "name": "imagn",
   "version": "0.1.0",
   "description": "Multi-model image generation CLI",
   "type": "module",
   "bin": {
-    "imgen": "./src/cli.ts"
+    "imagn": "./src/cli.ts"
   },
   "scripts": {
     "start": "bun run src/cli.ts",
