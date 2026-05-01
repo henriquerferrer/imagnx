@@ -43,10 +43,10 @@ output_dir = "/tmp/imagn"
     expect(c.defaultModel).toBe("gemini-2.5-flash-image");
   });
 
-  it("resolveConfig: env overrides TOML for output dir via IMGEN_OUTPUT_DIR", () => {
+  it("resolveConfig: env overrides TOML for output dir via IMAGN_OUTPUT_DIR", () => {
     const c = resolveConfig({
       tomlText: 'output_dir = "/from-toml"',
-      env: { IMGEN_OUTPUT_DIR: "/from-env" },
+      env: { IMAGN_OUTPUT_DIR: "/from-env" },
       flags: {},
     });
     expect(c.outputDir).toBe("/from-env");
@@ -55,7 +55,7 @@ output_dir = "/tmp/imagn"
   it("resolveConfig: flags win over everything", () => {
     const c = resolveConfig({
       tomlText: 'default_model = "gemini-2.5-flash-image"',
-      env: { IMGEN_DEFAULT_MODEL: "gpt-image-1.5" },
+      env: { IMAGN_DEFAULT_MODEL: "gpt-image-1.5" },
       flags: { defaultModel: "gpt-image-2" },
     });
     expect(c.defaultModel).toBe("gpt-image-2");
@@ -93,11 +93,11 @@ output_dir = "/tmp/imagn"
     expect(cfg.defaultQuality).toBeUndefined();
   });
 
-  it("envOverrides rejects bad IMGEN_DEFAULT_QUALITY", () => {
+  it("envOverrides rejects bad IMAGN_DEFAULT_QUALITY", () => {
     // We exercise envOverrides indirectly via resolveConfig
     const c = resolveConfig({
       tomlText: undefined,
-      env: { IMGEN_DEFAULT_QUALITY: "garbage" },
+      env: { IMAGN_DEFAULT_QUALITY: "garbage" },
       flags: {},
     });
     // Bad quality is rejected → falls back to HARD_DEFAULTS

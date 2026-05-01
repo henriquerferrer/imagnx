@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { defineCommand, runMain } from "citty";
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
+import pkg from "../package.json" with { type: "json" };
 
 import { exitCodeFor, InvalidArgs, PartialFailure } from "./errors";
 import {
@@ -44,6 +45,7 @@ interface SharedGenerateOpts {
   open?: boolean;
   json?: boolean;
   dryRun?: boolean;
+  debug?: boolean;
 }
 
 interface EditOpts extends SharedGenerateOpts {
@@ -101,7 +103,7 @@ async function runGenerate(opts: SharedGenerateOpts): Promise<void> {
   }
 
   if (opts.dryRun) {
-    process.stdout.write(
+    process.stderr.write(
       `[dry-run] kind=generate models=${modelIds.join(",")} prompt=${opts.prompt}\n`,
     );
     return;
@@ -161,11 +163,15 @@ async function runEdit(opts: EditOpts): Promise<void> {
     throw new InvalidArgs("edit requires a prompt (last positional argument)");
   }
 
-  // Validate ref paths exist
+  const MAX_REF_BYTES = 25 * 1024 * 1024; // 25 MB
+
+  // Validate ref paths exist and are files within size limit
   for (const ref of opts.refs) {
-    if (!existsSync(ref)) {
-      throw new InvalidArgs(`Reference image not found: ${ref}`);
-    }
+    if (!existsSync(ref)) throw new InvalidArgs(`Reference image not found: ${ref}`);
+    const st = statSync(ref);
+    if (!st.isFile()) throw new InvalidArgs(`Reference path is not a file: ${ref}`);
+    if (st.size > MAX_REF_BYTES)
+      throw new InvalidArgs(`Reference image too large: ${ref} (${st.size} bytes, max ${MAX_REF_BYTES})`);
   }
 
   // Read ref images
@@ -177,9 +183,11 @@ async function runEdit(opts: EditOpts): Promise<void> {
   // Read mask if provided
   let mask: Uint8Array | undefined;
   if (opts.mask) {
-    if (!existsSync(opts.mask)) {
-      throw new InvalidArgs(`Mask image not found: ${opts.mask}`);
-    }
+    if (!existsSync(opts.mask)) throw new InvalidArgs(`Mask image not found: ${opts.mask}`);
+    const stMask = statSync(opts.mask);
+    if (!stMask.isFile()) throw new InvalidArgs(`Mask path is not a file: ${opts.mask}`);
+    if (stMask.size > MAX_REF_BYTES)
+      throw new InvalidArgs(`Mask image too large: ${opts.mask} (${stMask.size} bytes, max ${MAX_REF_BYTES})`);
     mask = new Uint8Array(await readFile(opts.mask));
   }
 
@@ -220,7 +228,7 @@ async function runEdit(opts: EditOpts): Promise<void> {
   }
 
   if (opts.dryRun) {
-    process.stdout.write(
+    process.stderr.write(
       `[dry-run] kind=edit models=${modelIds.join(",")} refs=${opts.refs.join(",")} prompt=${opts.prompt}\n`,
     );
     return;
@@ -324,7 +332,7 @@ const sharedArgs = {
   },
   n: {
     type: "string" as const,
-    description: "Number of images to generate",
+    description: "Number of images to generate (positive integer)",
   },
   output: {
     type: "string" as const,
@@ -346,6 +354,12 @@ const sharedArgs = {
     description: "Validate args + print what would run, no API call",
     default: false,
   },
+  debug: {
+    type: "boolean" as const,
+    alias: "d",
+    default: false,
+    description: "Verbose error output (stack traces)",
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -366,17 +380,25 @@ const generateCmd = defineCommand({
     ...sharedArgs,
   },
   run({ args }) {
+    let n: number | undefined;
+    if (args.n !== undefined) {
+      n = parseInt(args.n, 10);
+      if (!Number.isFinite(n) || n < 1 || String(n) !== args.n.trim()) {
+        throw new InvalidArgs("--n must be a positive integer");
+      }
+    }
     return runGenerate({
       prompt: args.prompt,
       model: args.model,
       compare: args.compare,
       size: args.size,
       quality: args.quality,
-      n: args.n ? parseInt(args.n, 10) : undefined,
+      n,
       output: args.output,
       open: args.open,
       json: args.json,
       dryRun: args["dry-run"],
+      debug: args.debug,
     });
   },
 });
@@ -408,6 +430,13 @@ const editCmd = defineCommand({
     const prompt = positionals[positionals.length - 1]!;
     const refs = positionals.slice(0, -1);
 
+    let n: number | undefined;
+    if (args.n !== undefined) {
+      n = parseInt(args.n, 10);
+      if (!Number.isFinite(n) || n < 1 || String(n) !== args.n.trim()) {
+        throw new InvalidArgs("--n must be a positive integer");
+      }
+    }
     return runEdit({
       prompt,
       refs,
@@ -416,11 +445,12 @@ const editCmd = defineCommand({
       compare: args.compare,
       size: args.size,
       quality: args.quality,
-      n: args.n ? parseInt(args.n, 10) : undefined,
+      n,
       output: args.output,
       open: args.open,
       json: args.json,
       dryRun: args["dry-run"],
+      debug: args.debug,
     });
   },
 });
@@ -434,8 +464,31 @@ const modelsCmd = defineCommand({
     name: "models",
     description: "List available models grouped by provider, with capabilities",
   },
-  run() {
+  args: {
+    json: {
+      type: "boolean" as const,
+      default: false,
+      description: "Output as JSON",
+    },
+  },
+  run({ args }) {
     const grouped = listModels();
+    if (args.json) {
+      const out: Record<string, Array<Record<string, unknown>>> = {};
+      for (const [pid, models] of Object.entries(grouped)) {
+        out[pid] = models.map((m) => {
+          const cap = modelCapabilities(m);
+          return {
+            modelId: m,
+            supportsEdit: cap.supportsEdit,
+            supportsMask: cap.supportsMask,
+            validSizes: cap.validSizes,
+          };
+        });
+      }
+      process.stdout.write(JSON.stringify(out, null, 2) + "\n");
+      return;
+    }
     for (const [pid, models] of Object.entries(grouped)) {
       process.stdout.write(`${pid}:\n`);
       for (const m of models) {
@@ -497,8 +550,8 @@ const configCmd = defineCommand({
     const env = process.env;
     const cfg = resolveConfig({ tomlText: loadConfigFile(env), env, flags: {} });
     process.stdout.write(JSON.stringify(cfg, null, 2) + "\n");
-    process.stdout.write(`OPENAI_API_KEY: ${env.OPENAI_API_KEY ? "✓" : "✗"}\n`);
-    process.stdout.write(
+    process.stderr.write(`OPENAI_API_KEY: ${env.OPENAI_API_KEY ? "✓" : "✗"}\n`);
+    process.stderr.write(
       `GEMINI/GOOGLE_API_KEY: ${env.GEMINI_API_KEY || env.GOOGLE_API_KEY ? "✓" : "✗"}\n`,
     );
   },
@@ -511,7 +564,7 @@ const configCmd = defineCommand({
 const main = defineCommand({
   meta: {
     name: "imagn",
-    version: "0.1.0",
+    version: pkg.version,
     description: "Multi-model image generation CLI",
   },
   args: {
@@ -542,17 +595,25 @@ const main = defineCommand({
       // No prompt and no subcommand — nothing to do (citty shows usage on no args)
       return;
     }
+    let n: number | undefined;
+    if (args.n !== undefined) {
+      n = parseInt(args.n, 10);
+      if (!Number.isFinite(n) || n < 1 || String(n) !== args.n.trim()) {
+        throw new InvalidArgs("--n must be a positive integer");
+      }
+    }
     return runGenerate({
       prompt,
       model: args.model,
       compare: args.compare,
       size: args.size,
       quality: args.quality,
-      n: args.n ? parseInt(args.n, 10) : undefined,
+      n,
       output: args.output,
       open: args.open,
       json: args.json,
       dryRun: args["dry-run"],
+      debug: args.debug,
     });
   },
 });
@@ -609,6 +670,13 @@ try {
 } catch (err) {
   if (err instanceof Error) {
     process.stderr.write(`error: ${err.message}\n`);
+    if (
+      process.env.IMAGN_DEBUG === "true" ||
+      process.argv.includes("--debug") ||
+      process.argv.includes("-d")
+    ) {
+      if (err.stack) process.stderr.write(err.stack + "\n");
+    }
   }
   process.exit(exitCodeFor(err));
 }

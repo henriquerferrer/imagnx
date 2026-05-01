@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, rename, unlink } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { InvalidArgs } from "./errors";
 
@@ -61,7 +61,14 @@ export function resolveOutputPath(ctx: OutputContext): string {
 
 export async function writeImageBytes(path: string, bytes: Uint8Array): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, bytes);
+  const tmp = `${path}.tmp.${process.pid}.${Date.now()}`;
+  try {
+    await writeFile(tmp, bytes);
+    await rename(tmp, path);
+  } catch (err) {
+    try { await unlink(tmp); } catch { /* best-effort cleanup */ }
+    throw err;
+  }
 }
 
 export async function openInViewer(path: string): Promise<void> {

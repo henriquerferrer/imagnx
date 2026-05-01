@@ -65,6 +65,7 @@ export function providerForModel(modelId: string): "openai" | "google" {
 export function listModels(): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   for (const cap of Object.values(CAPABILITIES)) {
+    if (cap.enabled === false) continue;
     (out[cap.providerId] ??= []).push(cap.modelId);
   }
   return out;

@@ -88,4 +88,14 @@ describe("writeImageBytes", () => {
     expect(existsSync(path)).toBe(true);
     expect(readFileSync(path)).toEqual(Buffer.from(bytes));
   });
+
+  it("leaves no .tmp file after a successful write", async () => {
+    const { readdirSync } = await import("node:fs");
+    const path = join(dir, "out.png");
+    const bytes = new Uint8Array([137, 80, 78, 71]);
+    await writeImageBytes(path, bytes);
+    const entries = readdirSync(dir);
+    const tmpFiles = entries.filter((e) => e.includes(".tmp."));
+    expect(tmpFiles).toHaveLength(0);
+  });
 });

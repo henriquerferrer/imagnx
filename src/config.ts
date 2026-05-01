@@ -46,14 +46,14 @@ export function parseTomlConfig(text: string): ConfigOverrides {
 
 function envOverrides(env: Record<string, string | undefined>): ConfigOverrides {
   return {
-    defaultModel: narrowString(env.IMGEN_DEFAULT_MODEL),
-    outputDir: narrowString(env.IMGEN_OUTPUT_DIR),
-    defaultSize: narrowEnum(env.IMGEN_DEFAULT_SIZE, VALID_SIZES),
-    defaultQuality: narrowEnum(env.IMGEN_DEFAULT_QUALITY, VALID_QUALITIES),
+    defaultModel: narrowString(env.IMAGN_DEFAULT_MODEL),
+    outputDir: narrowString(env.IMAGN_OUTPUT_DIR),
+    defaultSize: narrowEnum(env.IMAGN_DEFAULT_SIZE, VALID_SIZES),
+    defaultQuality: narrowEnum(env.IMAGN_DEFAULT_QUALITY, VALID_QUALITIES),
     openAfter:
-      env.IMGEN_OPEN_AFTER === "true"
+      env.IMAGN_OPEN_AFTER === "true"
         ? true
-        : env.IMGEN_OPEN_AFTER === "false"
+        : env.IMAGN_OPEN_AFTER === "false"
           ? false
           : undefined,
   };
