@@ -1,0 +1,8 @@
+{
+  "name": "imgen",
+  "version": "0.1.0",
+  "description": "Multi-model image generation and editing via the imgen CLI.",
+  "tags": ["images", "openai", "gemini", "nano-banana", "cli-wrapper"],
+  "agents": ["claude-code", "cursor", "codex"],
+  "files": ["SKILL.md", "reference.md"]
+}
