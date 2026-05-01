@@ -82,4 +82,25 @@ output_dir = "/tmp/imagn"
   it("apiKeyFor throws MissingApiKey when env is missing", () => {
     expect(() => apiKeyFor("openai", {})).toThrow(MissingApiKey);
   });
+
+  it("parseTomlConfig rejects non-string default_model", () => {
+    const cfg = parseTomlConfig("default_model = 42");
+    expect(cfg.defaultModel).toBeUndefined();
+  });
+
+  it("parseTomlConfig rejects bad default_quality", () => {
+    const cfg = parseTomlConfig('default_quality = "garbage"');
+    expect(cfg.defaultQuality).toBeUndefined();
+  });
+
+  it("envOverrides rejects bad IMGEN_DEFAULT_QUALITY", () => {
+    // We exercise envOverrides indirectly via resolveConfig
+    const c = resolveConfig({
+      tomlText: undefined,
+      env: { IMGEN_DEFAULT_QUALITY: "garbage" },
+      flags: {},
+    });
+    // Bad quality is rejected → falls back to HARD_DEFAULTS
+    expect(c.defaultQuality).toBe("high");
+  });
 });

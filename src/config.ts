@@ -4,6 +4,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { MissingApiKey } from "./errors";
 import type { Quality, Size } from "./providers/types";
+import { narrowEnum, narrowString, narrowBool, getProp } from "./narrow";
 
 export interface ResolvedConfig {
   defaultModel: string;
@@ -29,23 +30,26 @@ export interface ConfigOverrides {
   openAfter?: boolean;
 }
 
+const VALID_QUALITIES: ReadonlyArray<Quality> = ["low", "medium", "high", "auto"];
+const VALID_SIZES: ReadonlyArray<Size> = ["auto", "1024x1024", "1536x1024", "1024x1536"];
+
 export function parseTomlConfig(text: string): ConfigOverrides {
-  const data = TOML.parse(text) as Record<string, unknown>;
+  const data: unknown = TOML.parse(text);
   return {
-    defaultModel: data.default_model as string | undefined,
-    outputDir: data.output_dir as string | undefined,
-    defaultSize: data.default_size as Size | undefined,
-    defaultQuality: data.default_quality as Quality | undefined,
-    openAfter: data.open_after as boolean | undefined,
+    defaultModel: narrowString(getProp(data, "default_model")),
+    outputDir: narrowString(getProp(data, "output_dir")),
+    defaultSize: narrowEnum(getProp(data, "default_size"), VALID_SIZES),
+    defaultQuality: narrowEnum(getProp(data, "default_quality"), VALID_QUALITIES),
+    openAfter: narrowBool(getProp(data, "open_after")),
   };
 }
 
 function envOverrides(env: Record<string, string | undefined>): ConfigOverrides {
   return {
-    defaultModel: env.IMGEN_DEFAULT_MODEL,
-    outputDir: env.IMGEN_OUTPUT_DIR,
-    defaultSize: env.IMGEN_DEFAULT_SIZE as Size | undefined,
-    defaultQuality: env.IMGEN_DEFAULT_QUALITY as Quality | undefined,
+    defaultModel: narrowString(env.IMGEN_DEFAULT_MODEL),
+    outputDir: narrowString(env.IMGEN_OUTPUT_DIR),
+    defaultSize: narrowEnum(env.IMGEN_DEFAULT_SIZE, VALID_SIZES),
+    defaultQuality: narrowEnum(env.IMGEN_DEFAULT_QUALITY, VALID_QUALITIES),
     openAfter:
       env.IMGEN_OPEN_AFTER === "true"
         ? true
