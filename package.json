@@ -6,7 +6,7 @@
   "author": "Henrique Ferrer",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/henriquerferrer/imagn.git"
+    "url": "git+https://github.com/henriquerferrer/imagnx.git"
   },
   "type": "module",
   "bin": {

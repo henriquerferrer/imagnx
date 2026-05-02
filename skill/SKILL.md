@@ -7,7 +7,7 @@ allowed-tools: Bash(command -v *) Bash(imagnx *) Bash(npm install *) Bash(jq *)
 compatibility: Requires Node.js ≥18 and either OPENAI_API_KEY or GEMINI_API_KEY in env.
 metadata:
   version: "0.1.0"
-  repository: github.com/henriquerferrer/imagn
+  repository: github.com/henriquerferrer/imagnx
 ---
 
 # imagnx
@@ -25,9 +25,9 @@ command -v imagnx >/dev/null 2>&1 && imagnx --version || echo "MISSING"
 ```
 
 If the output is `MISSING`:
-1. Tell the user: "imagnx is not installed. Installing now via `npm install -g github.com/henriquerferrer/imagn`."
-2. Run: `npm install -g github.com/henriquerferrer/imagn`
-3. Verify: `imagnx --version`. If still missing, print: "Manual install: clone https://github.com/henriquerferrer/imagn and run `npm install -g .`" and stop.
+1. Tell the user: "imagnx is not installed. Installing now via `npm install -g github.com/henriquerferrer/imagnx`."
+2. Run: `npm install -g github.com/henriquerferrer/imagnx`
+3. Verify: `imagnx --version`. If still missing, print: "Manual install: clone https://github.com/henriquerferrer/imagnx and run `npm install -g .`" and stop.
 
 ## Step 2 — Parse the request
 

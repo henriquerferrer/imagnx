@@ -9,7 +9,7 @@ Requires Node.js ≥18.
 ```bash
 npm install -g imagnx          # once published
 # or, from source:
-npm install -g github.com/henriquerferrer/imagn   # builds dist/ via prepare hook
+npm install -g github.com/henriquerferrer/imagnx   # builds dist/ via prepare hook
 ```
 
 ## Quick start
@@ -27,7 +27,7 @@ imagnx edit photo.png "give the cat a red helmet"
 Install via [`npx skills`](https://github.com/vercel-labs/skills) (the community skill package manager):
 
 ```bash
-npx skills add https://github.com/henriquerferrer/imagn/tree/main/skill
+npx skills add https://github.com/henriquerferrer/imagnx/tree/main/skill
 ```
 
 Or install manually by copying `skill/` into your skills directory:
@@ -35,8 +35,8 @@ Or install manually by copying `skill/` into your skills directory:
 ```bash
 # user-level (all projects)
 mkdir -p ~/.claude/skills/imagnx
-curl -fsSL https://raw.githubusercontent.com/henriquerferrer/imagn/main/skill/SKILL.md     -o ~/.claude/skills/imagnx/SKILL.md
-curl -fsSL https://raw.githubusercontent.com/henriquerferrer/imagn/main/skill/reference.md -o ~/.claude/skills/imagnx/reference.md
+curl -fsSL https://raw.githubusercontent.com/henriquerferrer/imagnx/main/skill/SKILL.md     -o ~/.claude/skills/imagnx/SKILL.md
+curl -fsSL https://raw.githubusercontent.com/henriquerferrer/imagnx/main/skill/reference.md -o ~/.claude/skills/imagnx/reference.md
 
 # project-level
 mkdir -p .claude/skills/imagnx && cp -r path/to/imagnx/skill/* .claude/skills/imagnx/
