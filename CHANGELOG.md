@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-05-02
+
+### Added
+
+- YAML config support. Drop a `~/.imagnx/config.yml` (or `.yaml`) using
+  the same key names as the TOML form.
+- `parseYamlConfig` exported alongside `parseTomlConfig`.
+
+### Changed
+
+- Config file location moved from `~/.config/imagnx/config.toml` (XDG)
+  to `~/.imagnx/config.toml`. Lookup order is now
+  `config.toml` → `config.yml` → `config.yaml` under `~/.imagnx/`.
+  `imagnx init` writes to the new location.
+- Env var prefix renamed `IMAGN_*` → `IMAGNX_*`. Affected:
+  `IMAGNX_DEFAULT_MODEL`, `IMAGNX_OUTPUT_DIR`, `IMAGNX_DEFAULT_SIZE`,
+  `IMAGNX_DEFAULT_QUALITY`, `IMAGNX_OPEN_AFTER`, `IMAGNX_DEBUG`,
+  `IMAGNX_REQUEST_TIMEOUT_MS`. Old `IMAGN_*` names are no longer
+  honored.
+- `resolveConfig` now takes `file: LoadedConfig | undefined` instead
+  of `tomlText: string | undefined` so the format can be propagated
+  from `loadConfigFile`.
+
+### Removed
+
+- XDG (`$XDG_CONFIG_HOME`) config path lookup.
+- Backward compatibility for the legacy `IMAGN_*` env var prefix.
+
 ## [0.1.1] - 2026-05-02
 
 ### Fixed

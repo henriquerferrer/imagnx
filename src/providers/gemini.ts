@@ -29,7 +29,7 @@ export function createGeminiProvider(opts: GeminiProviderOptions): Provider {
       generationConfig: { responseModalities: ["IMAGE"] },
     };
 
-    const timeoutMs = Number(process.env.IMAGN_REQUEST_TIMEOUT_MS) || 120_000;
+    const timeoutMs = Number(process.env.IMAGNX_REQUEST_TIMEOUT_MS) || 120_000;
     let res: Response;
     try {
       res = await fetch(url, {

@@ -1,4 +1,5 @@
 import TOML from "@iarna/toml";
+import YAML from "yaml";
 import { homedir } from "node:os";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
@@ -45,8 +46,7 @@ export const VALID_SIZES: ReadonlyArray<Size> = [
   "2160x3840",
 ];
 
-export function parseTomlConfig(text: string): ConfigOverrides {
-  const data: unknown = TOML.parse(text);
+function narrowConfig(data: unknown): ConfigOverrides {
   return {
     defaultModel: narrowString(getProp(data, "default_model")),
     outputDir: narrowString(getProp(data, "output_dir")),
@@ -56,16 +56,24 @@ export function parseTomlConfig(text: string): ConfigOverrides {
   };
 }
 
+export function parseTomlConfig(text: string): ConfigOverrides {
+  return narrowConfig(TOML.parse(text));
+}
+
+export function parseYamlConfig(text: string): ConfigOverrides {
+  return narrowConfig(YAML.parse(text));
+}
+
 function envOverrides(env: Record<string, string | undefined>): ConfigOverrides {
   return {
-    defaultModel: narrowString(env.IMAGN_DEFAULT_MODEL),
-    outputDir: narrowString(env.IMAGN_OUTPUT_DIR),
-    defaultSize: narrowEnum(env.IMAGN_DEFAULT_SIZE, VALID_SIZES),
-    defaultQuality: narrowEnum(env.IMAGN_DEFAULT_QUALITY, VALID_QUALITIES),
+    defaultModel: narrowString(env.IMAGNX_DEFAULT_MODEL),
+    outputDir: narrowString(env.IMAGNX_OUTPUT_DIR),
+    defaultSize: narrowEnum(env.IMAGNX_DEFAULT_SIZE, VALID_SIZES),
+    defaultQuality: narrowEnum(env.IMAGNX_DEFAULT_QUALITY, VALID_QUALITIES),
     openAfter:
-      env.IMAGN_OPEN_AFTER === "true"
+      env.IMAGNX_OPEN_AFTER === "true"
         ? true
-        : env.IMAGN_OPEN_AFTER === "false"
+        : env.IMAGNX_OPEN_AFTER === "false"
           ? false
           : undefined,
   };
@@ -91,23 +99,46 @@ function merge(...layers: ConfigOverrides[]): ResolvedConfig {
 }
 
 export interface ResolveInput {
-  tomlText: string | undefined;
+  file: LoadedConfig | undefined;
   env: Record<string, string | undefined>;
   flags: ConfigOverrides;
 }
 
 export function resolveConfig(input: ResolveInput): ResolvedConfig {
-  const fromToml = input.tomlText ? parseTomlConfig(input.tomlText) : {};
+  const fromFile: ConfigOverrides = !input.file
+    ? {}
+    : input.file.format === "toml"
+      ? parseTomlConfig(input.file.text)
+      : parseYamlConfig(input.file.text);
   const fromEnv = envOverrides(input.env);
-  const merged = merge(fromToml, fromEnv, input.flags);
+  const merged = merge(fromFile, fromEnv, input.flags);
   merged.outputDir = expandTilde(merged.outputDir, input.env);
   return merged;
 }
 
-export function loadConfigFile(env: Record<string, string | undefined>): string | undefined {
-  const xdg = env.XDG_CONFIG_HOME ?? join(env.HOME ?? homedir(), ".config");
-  const path = join(xdg, "imagnx", "config.toml");
-  if (existsSync(path)) return readFileSync(path, "utf8");
+export interface LoadedConfig {
+  text: string;
+  format: "toml" | "yaml";
+  path: string;
+}
+
+export function configDir(env: Record<string, string | undefined>): string {
+  return join(env.HOME ?? homedir(), ".imagnx");
+}
+
+export function loadConfigFile(env: Record<string, string | undefined>): LoadedConfig | undefined {
+  const dir = configDir(env);
+  const candidates: Array<{ name: string; format: "toml" | "yaml" }> = [
+    { name: "config.toml", format: "toml" },
+    { name: "config.yml", format: "yaml" },
+    { name: "config.yaml", format: "yaml" },
+  ];
+  for (const c of candidates) {
+    const path = join(dir, c.name);
+    if (existsSync(path)) {
+      return { text: readFileSync(path, "utf8"), format: c.format, path };
+    }
+  }
   return undefined;
 }
 

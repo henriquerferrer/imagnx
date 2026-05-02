@@ -2,12 +2,18 @@ import { describe, it, expect } from "vitest";
 import {
   resolveConfig,
   parseTomlConfig,
+  parseYamlConfig,
   HARD_DEFAULTS,
   apiKeyFor,
   VALID_QUALITIES,
   VALID_SIZES,
 } from "../../src/config.js";
 import { MissingApiKey } from "../../src/errors.js";
+
+const toml = (text: string) =>
+  ({ text, format: "toml", path: "/test/config.toml" } as const);
+const yaml = (text: string) =>
+  ({ text, format: "yaml", path: "/test/config.yml" } as const);
 
 describe("config", () => {
   it("HARD_DEFAULTS contain expected baseline", () => {
@@ -31,24 +37,51 @@ output_dir = "/tmp/imagnx"
     expect(cfg.outputDir).toBe("/tmp/imagnx");
   });
 
+  it("parseYamlConfig parses file overrides", () => {
+    const cfg = parseYamlConfig(`
+default_model: gemini-2.5-flash-image
+output_dir: /tmp/imagnx
+default_quality: medium
+open_after: true
+`);
+    expect(cfg.defaultModel).toBe("gemini-2.5-flash-image");
+    expect(cfg.outputDir).toBe("/tmp/imagnx");
+    expect(cfg.defaultQuality).toBe("medium");
+    expect(cfg.openAfter).toBe(true);
+  });
+
+  it("parseYamlConfig rejects bad default_quality", () => {
+    const cfg = parseYamlConfig("default_quality: garbage");
+    expect(cfg.defaultQuality).toBeUndefined();
+  });
+
   it("resolveConfig: hard defaults win when nothing else", () => {
-    const c = resolveConfig({ tomlText: undefined, env: {}, flags: {} });
+    const c = resolveConfig({ file: undefined, env: {}, flags: {} });
     expect(c.defaultModel).toBe(HARD_DEFAULTS.defaultModel);
   });
 
   it("resolveConfig: TOML overrides defaults", () => {
     const c = resolveConfig({
-      tomlText: 'default_model = "gemini-2.5-flash-image"',
+      file: toml('default_model = "gemini-2.5-flash-image"'),
       env: {},
       flags: {},
     });
     expect(c.defaultModel).toBe("gemini-2.5-flash-image");
   });
 
-  it("resolveConfig: env overrides TOML for output dir via IMAGN_OUTPUT_DIR", () => {
+  it("resolveConfig: YAML overrides defaults", () => {
     const c = resolveConfig({
-      tomlText: 'output_dir = "/from-toml"',
-      env: { IMAGN_OUTPUT_DIR: "/from-env" },
+      file: yaml("default_model: gemini-2.5-flash-image"),
+      env: {},
+      flags: {},
+    });
+    expect(c.defaultModel).toBe("gemini-2.5-flash-image");
+  });
+
+  it("resolveConfig: env overrides file via IMAGNX_OUTPUT_DIR", () => {
+    const c = resolveConfig({
+      file: toml('output_dir = "/from-toml"'),
+      env: { IMAGNX_OUTPUT_DIR: "/from-env" },
       flags: {},
     });
     expect(c.outputDir).toBe("/from-env");
@@ -56,8 +89,8 @@ output_dir = "/tmp/imagnx"
 
   it("resolveConfig: flags win over everything", () => {
     const c = resolveConfig({
-      tomlText: 'default_model = "gemini-2.5-flash-image"',
-      env: { IMAGN_DEFAULT_MODEL: "gpt-image-1.5" },
+      file: toml('default_model = "gemini-2.5-flash-image"'),
+      env: { IMAGNX_DEFAULT_MODEL: "gpt-image-1.5" },
       flags: { defaultModel: "gpt-image-2" },
     });
     expect(c.defaultModel).toBe("gpt-image-2");
@@ -65,11 +98,20 @@ output_dir = "/tmp/imagnx"
 
   it("resolveConfig expands ~ in outputDir", () => {
     const c = resolveConfig({
-      tomlText: 'output_dir = "~/Pictures/imagnx"',
+      file: toml('output_dir = "~/Pictures/imagnx"'),
       env: { HOME: "/Users/test" },
       flags: {},
     });
     expect(c.outputDir).toBe("/Users/test/Pictures/imagnx");
+  });
+
+  it("resolveConfig: legacy IMAGN_* env vars are NOT honored", () => {
+    const c = resolveConfig({
+      file: undefined,
+      env: { IMAGN_DEFAULT_MODEL: "gpt-image-2" },
+      flags: {},
+    });
+    expect(c.defaultModel).toBe(HARD_DEFAULTS.defaultModel);
   });
 
   it("apiKeyFor returns key from env", () => {
@@ -95,11 +137,11 @@ output_dir = "/tmp/imagnx"
     expect(cfg.defaultQuality).toBeUndefined();
   });
 
-  it("envOverrides rejects bad IMAGN_DEFAULT_QUALITY", () => {
+  it("envOverrides rejects bad IMAGNX_DEFAULT_QUALITY", () => {
     // We exercise envOverrides indirectly via resolveConfig
     const c = resolveConfig({
-      tomlText: undefined,
-      env: { IMAGN_DEFAULT_QUALITY: "garbage" },
+      file: undefined,
+      env: { IMAGNX_DEFAULT_QUALITY: "garbage" },
       flags: {},
     });
     // Bad quality is rejected → falls back to HARD_DEFAULTS

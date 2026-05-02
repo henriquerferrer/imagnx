@@ -6,7 +6,7 @@
 - `imagnx generate "<prompt>" [flags]` — explicit form.
 - `imagnx edit <refs...> "<prompt>" [flags]` — edits with reference images.
 - `imagnx models` — list models per provider with capabilities.
-- `imagnx init` — write a starter `~/.config/imagnx/config.toml`.
+- `imagnx init` — write a starter `~/.imagnx/config.toml`.
 - `imagnx config` — print resolved config and key status.
 
 ## Flags

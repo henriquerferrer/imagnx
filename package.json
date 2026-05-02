@@ -28,8 +28,9 @@
     "prepare": "npm run build"
   },
   "dependencies": {
+    "@iarna/toml": "^2.2.5",
     "citty": "^0.1.6",
-    "@iarna/toml": "^2.2.5"
+    "yaml": "^2.8.4"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

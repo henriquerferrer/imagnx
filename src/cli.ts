@@ -18,6 +18,7 @@ import {
 } from "./registry.js";
 import {
   apiKeyFor,
+  configDir,
   loadConfigFile,
   resolveConfig,
   VALID_QUALITIES,
@@ -118,7 +119,7 @@ function resolveShared(
   opts: SharedGenerateOpts,
   env: Record<string, string | undefined>,
 ): ResolvedShared {
-  const cfg = resolveConfig({ tomlText: loadConfigFile(env), env, flags: {} });
+  const cfg = resolveConfig({ file: loadConfigFile(env), env, flags: {} });
 
   let modelIds: string[];
   if (opts.compare) {
@@ -381,7 +382,7 @@ function reportAndExit(err: unknown): never {
   if (err instanceof Error) {
     process.stderr.write(`error: ${err.message}\n`);
     const debug =
-      process.env.IMAGN_DEBUG === "true" ||
+      process.env.IMAGNX_DEBUG === "true" ||
       process.argv.includes("--debug") ||
       process.argv.includes("-d");
     if (debug && err.stack) process.stderr.write(err.stack + "\n");
@@ -537,13 +538,11 @@ const modelsCmd = defineCommand({
 const initCmd = defineCommand({
   meta: {
     name: "init",
-    description: "Write a starter ~/.config/imagnx/config.toml",
+    description: "Write a starter ~/.imagnx/config.toml",
   },
   run() {
     return withExitCode(async () => {
-      const home = process.env.HOME ?? "";
-      const xdg = process.env.XDG_CONFIG_HOME ?? `${home}/.config`;
-      const dir = `${xdg}/imagnx`;
+      const dir = configDir(process.env);
       const path = `${dir}/config.toml`;
       const { mkdir, writeFile } = await import("node:fs/promises");
       await mkdir(dir, { recursive: true });
@@ -585,7 +584,7 @@ const configCmd = defineCommand({
   run() {
     return withExitCode(() => {
       const env = process.env;
-      const cfg = resolveConfig({ tomlText: loadConfigFile(env), env, flags: {} });
+      const cfg = resolveConfig({ file: loadConfigFile(env), env, flags: {} });
       process.stdout.write(JSON.stringify(cfg, null, 2) + "\n");
       process.stderr.write(`OPENAI_API_KEY: ${env.OPENAI_API_KEY ? "✓" : "✗"}\n`);
       process.stderr.write(

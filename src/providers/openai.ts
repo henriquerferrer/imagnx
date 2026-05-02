@@ -27,7 +27,7 @@ export function createOpenAIProvider(opts: OpenAIProviderOptions): Provider {
     if (input.quality) body.quality = input.quality;
     body.response_format = "b64_json";
 
-    const timeoutMs = Number(process.env.IMAGN_REQUEST_TIMEOUT_MS) || 120_000;
+    const timeoutMs = Number(process.env.IMAGNX_REQUEST_TIMEOUT_MS) || 120_000;
     let res: Response;
     try {
       res = await fetch(`${baseUrl}/v1/images/generations`, {
@@ -67,7 +67,7 @@ export function createOpenAIProvider(opts: OpenAIProviderOptions): Provider {
       form.set("mask", new Blob([input.mask], { type: "image/png" }), "mask.png");
     }
 
-    const timeoutMs = Number(process.env.IMAGN_REQUEST_TIMEOUT_MS) || 120_000;
+    const timeoutMs = Number(process.env.IMAGNX_REQUEST_TIMEOUT_MS) || 120_000;
     let res: Response;
     try {
       res = await fetch(`${baseUrl}/v1/images/edits`, {

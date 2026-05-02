@@ -56,7 +56,7 @@ The skill auto-detects when the CLI is missing and installs it on first use.
 
 ## Configuration
 
-Run `imagnx init` to create `~/.config/imagnx/config.toml`. Defaults:
+Run `imagnx init` to create `~/.imagnx/config.toml`. Defaults:
 
 ```toml
 default_model    = "gpt-image-1.5"
@@ -65,6 +65,20 @@ default_size     = "auto"
 default_quality  = "high"
 open_after       = false
 ```
+
+YAML works too — drop a `~/.imagnx/config.yml` (or `.yaml`) instead:
+
+```yaml
+default_model: gpt-image-1.5
+output_dir: ~/Pictures/imagnx
+default_size: auto
+default_quality: high
+open_after: false
+```
+
+Lookup order: `config.toml` → `config.yml` → `config.yaml` (first match wins).
+
+Env var overrides (all `IMAGNX_*`): `IMAGNX_DEFAULT_MODEL`, `IMAGNX_OUTPUT_DIR`, `IMAGNX_DEFAULT_SIZE`, `IMAGNX_DEFAULT_QUALITY`, `IMAGNX_OPEN_AFTER`, `IMAGNX_DEBUG`.
 
 Resolution order: hard-coded defaults → config file → env vars → CLI flags.
 
