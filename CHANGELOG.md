@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-05-02
+
+### Fixed
+
+- `--help` title now shows `imagnx` instead of the legacy `imagn`. The
+  source rename (`meta.name` in `defineCommand`) shipped after the 0.1.0
+  artifact was built; this republish brings the help text in line with
+  the package and binary names.
+
 ## [0.1.0] - 2026-05-02
 
 Initial public release.
