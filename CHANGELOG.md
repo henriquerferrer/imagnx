@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-05-02
+
+### Fixed
+
+- OpenAI provider no longer sends `response_format=b64_json` to the
+  `/v1/images/generations` and `/v1/images/edits` endpoints. OpenAI
+  removed the parameter from the gpt-image family (`gpt-image-1.5`,
+  `gpt-image-2`); requests including it now fail with HTTP 400
+  `Unknown parameter: 'response_format'.`, which broke every generate
+  and edit call against those models. The response shape is unchanged
+  (gpt-image-* always returns base64 in `data[].b64_json`), so the
+  existing parser keeps working with the parameter dropped.
+
 ## [0.1.6] - 2026-05-02
 
 ### Changed

@@ -25,7 +25,6 @@ export function createOpenAIProvider(opts: OpenAIProviderOptions): Provider {
     };
     if (input.size) body.size = input.size;
     if (input.quality) body.quality = input.quality;
-    body.response_format = "b64_json";
 
     const timeoutMs = Number(process.env.IMAGNX_REQUEST_TIMEOUT_MS) || 120_000;
     let res: Response;
@@ -55,7 +54,6 @@ export function createOpenAIProvider(opts: OpenAIProviderOptions): Provider {
     form.set("n", String(input.n ?? 1));
     if (input.size) form.set("size", input.size);
     if (input.quality) form.set("quality", input.quality);
-    form.set("response_format", "b64_json");
     input.refImages.forEach((bytes, i) => {
       form.append(
         input.refImages.length > 1 ? "image[]" : "image",
