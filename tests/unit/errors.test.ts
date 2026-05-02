@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import {
   ImgenError,
   MissingApiKey,
@@ -8,7 +8,7 @@ import {
   ProviderError,
   PartialFailure,
   exitCodeFor,
-} from "../../src/errors";
+} from "../../src/errors.js";
 
 describe("errors", () => {
   it("each error class exposes exit code", () => {

@@ -4,9 +4,9 @@ import type {
   GenerateInput,
   ImageResult,
   Provider,
-} from "./types";
-import { ProviderError, RateLimited } from "../errors";
-import { getProp } from "../narrow";
+} from "./types.js";
+import { ProviderError, RateLimited } from "../errors.js";
+import { getProp } from "../narrow.js";
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta";
 
@@ -63,12 +63,9 @@ export function createGeminiProvider(opts: GeminiProviderOptions): Provider {
     }
 
     if (!res.ok) {
-      const errObj = getProp(data, "error");
-      const msg =
-        (typeof getProp(errObj, "message") === "string"
-          ? getProp(errObj, "message")
-          : undefined) ?? `HTTP ${res.status}`;
-      throw new ProviderError("google", msg as string);
+      const errMsg = getProp(getProp(data, "error"), "message");
+      const msg = typeof errMsg === "string" ? errMsg : `HTTP ${res.status}`;
+      throw new ProviderError("google", msg);
     }
 
     const candidates = getProp(data, "candidates");

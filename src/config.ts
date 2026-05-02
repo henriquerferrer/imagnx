@@ -2,9 +2,9 @@ import TOML from "@iarna/toml";
 import { homedir } from "node:os";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { MissingApiKey } from "./errors";
-import type { Quality, Size } from "./providers/types";
-import { narrowEnum, narrowString, narrowBool, getProp } from "./narrow";
+import { MissingApiKey } from "./errors.js";
+import type { Quality, Size } from "./providers/types.js";
+import { narrowEnum, narrowString, narrowBool, getProp } from "./narrow.js";
 
 export interface ResolvedConfig {
   defaultModel: string;
@@ -30,8 +30,20 @@ export interface ConfigOverrides {
   openAfter?: boolean;
 }
 
-const VALID_QUALITIES: ReadonlyArray<Quality> = ["low", "medium", "high", "auto"];
-const VALID_SIZES: ReadonlyArray<Size> = ["auto", "1024x1024", "1536x1024", "1024x1536"];
+export const VALID_QUALITIES: ReadonlyArray<Quality> = ["low", "medium", "high", "auto"];
+// Union of presets accepted by any supported model. Per-model validity is
+// narrowed by registry.validateRequest; this is just the "is this a known
+// preset string" gate at the CLI boundary.
+export const VALID_SIZES: ReadonlyArray<Size> = [
+  "auto",
+  "1024x1024",
+  "1536x1024",
+  "1024x1536",
+  "2048x2048",
+  "2048x1152",
+  "3840x2160",
+  "2160x3840",
+];
 
 export function parseTomlConfig(text: string): ConfigOverrides {
   const data: unknown = TOML.parse(text);

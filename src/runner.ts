@@ -3,8 +3,8 @@ import type {
   GenerateInput,
   ImageResult,
   Provider,
-} from "./providers/types";
-import { UnsupportedFeature } from "./errors";
+} from "./providers/types.js";
+import { UnsupportedFeature } from "./errors.js";
 
 export type RunRequest =
   | { kind: "generate"; modelIds: string[]; input: GenerateInput }

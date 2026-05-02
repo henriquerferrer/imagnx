@@ -13,11 +13,11 @@
 
 | Flag | Type | Description |
 |---|---|---|
-| `-m, --model <id[,id]>` | string | Model id or comma list. Defaults to config or `gpt-image-1.5`. |
+| `-m, --model <id[,id]>` | string | Model id (or alias) or comma list. Defaults to config or `gpt-image-1.5`. |
 | `--compare` | bool | Run across all configured providers. Overrides `-m`. |
-| `-s, --size <size>` | string | `1024x1024`, `1536x1024`, `1024x1536`, `auto`. |
+| `-s, --size <size>` | string | `auto`, `1024x1024`, `1536x1024`, `1024x1536`. gpt-image-2 also accepts `2048x2048`, `2048x1152`, `3840x2160`, `2160x3840`. |
 | `-q, --quality <q>` | string | `low`, `medium`, `high`, `auto`. |
-| `-n <num>` | int | Images per model. Default 1. |
+| `--n <num>` | int | Images per model. Default 1. |
 | `--mask <path>` | path | (edit only) PNG alpha mask. Requires exactly one ref image. |
 | `-o, --output <path>` | path | File or directory override. |
 | `--open` | bool | Open results in default viewer. |
@@ -27,8 +27,8 @@
 
 ## Supported models
 
-- **openai:** `gpt-image-1.5` (edit ✓, mask ✓)
-- **google:** `gemini-2.5-flash-image` (edit ✓, mask ✗)
+- **openai:** `gpt-image-1.5` (edit ✓, mask ✓), `gpt-image-2` (edit ✓, mask ✓)
+- **google:** `gemini-2.5-flash-image` (edit ✓, mask ✗) — alias: `nano-banana`
 
 ## Exit codes
 

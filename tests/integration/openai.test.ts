@@ -1,12 +1,14 @@
-import { describe, it, expect, afterEach } from "bun:test";
+import { describe, it, expect, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { createOpenAIProvider } from "../../src/providers/openai";
-import { installFetchMock } from "../helpers/fetch-mock";
-import { ProviderError } from "../../src/errors";
+import { fileURLToPath } from "node:url";
+import { createOpenAIProvider } from "../../src/providers/openai.js";
+import { installFetchMock } from "../helpers/fetch-mock.js";
+import { ProviderError } from "../../src/errors.js";
 
+const HERE = fileURLToPath(new URL(".", import.meta.url));
 const FIX = (name: string) =>
-  readFileSync(join(import.meta.dir, "fixtures", name), "utf8");
+  readFileSync(join(HERE, "fixtures", name), "utf8");
 
 describe("openai provider", () => {
   let restore: (() => void) | undefined;

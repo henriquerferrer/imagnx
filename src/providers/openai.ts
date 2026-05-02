@@ -3,9 +3,9 @@ import type {
   GenerateInput,
   ImageResult,
   Provider,
-} from "./types";
-import { ProviderError, RateLimited } from "../errors";
-import { getProp } from "../narrow";
+} from "./types.js";
+import { ProviderError, RateLimited } from "../errors.js";
+import { getProp } from "../narrow.js";
 
 const BASE = "https://api.openai.com";
 
@@ -87,7 +87,7 @@ export function createOpenAIProvider(opts: OpenAIProviderOptions): Provider {
 
   return {
     id: "openai",
-    models: ["gpt-image-1.5"], // gpt-image-2 added when GA
+    models: ["gpt-image-1.5", "gpt-image-2"],
     generate: callJson,
     edit: callEdit,
   };
@@ -114,11 +114,9 @@ async function parseImagesResponse(
   }
 
   if (!res.ok) {
-    const msg =
-      (typeof getProp(getProp(data, "error"), "message") === "string"
-        ? getProp(getProp(data, "error"), "message")
-        : undefined) ?? `HTTP ${res.status}`;
-    throw new ProviderError("openai", msg as string);
+    const errMsg = getProp(getProp(data, "error"), "message");
+    const msg = typeof errMsg === "string" ? errMsg : `HTTP ${res.status}`;
+    throw new ProviderError("openai", msg);
   }
 
   const dataArray = getProp(data, "data");

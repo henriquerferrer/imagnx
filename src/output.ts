@@ -1,6 +1,7 @@
 import { mkdir, writeFile, rename, unlink } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { InvalidArgs } from "./errors";
+import { spawn } from "node:child_process";
+import { InvalidArgs } from "./errors.js";
 
 export function slugify(prompt: string): string {
   const cleaned = prompt
@@ -78,5 +79,9 @@ export async function openInViewer(path: string): Promise<void> {
       : process.platform === "win32"
         ? ["cmd", "/c", "start", "", path]
         : ["xdg-open", path];
-  Bun.spawn(cmd, { stdio: ["ignore", "ignore", "ignore"] });
+  // Fire-and-forget: detach so the parent process can exit independently of
+  // the viewer window.
+  const [bin, ...args] = cmd;
+  const child = spawn(bin!, args, { stdio: "ignore", detached: true });
+  child.unref();
 }

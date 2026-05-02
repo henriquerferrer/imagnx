@@ -1,12 +1,13 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import {
   modelCapabilities,
   providerForModel,
   listModels,
+  resolveModelId,
   validateRequest,
   KNOWN_MODELS,
-} from "../../src/registry";
-import { UnsupportedFeature, InvalidArgs } from "../../src/errors";
+} from "../../src/registry.js";
+import { UnsupportedFeature, InvalidArgs } from "../../src/errors.js";
 
 describe("registry", () => {
   it("KNOWN_MODELS lists all supported model IDs", () => {
@@ -72,5 +73,34 @@ describe("registry", () => {
     expect(() =>
       validateRequest("gpt-image-1.5", { kind: "edit", refCount: 999 }),
     ).toThrow(InvalidArgs);
+  });
+
+  it("KNOWN_MODELS contains gpt-image-2", () => {
+    expect(KNOWN_MODELS).toContain("gpt-image-2");
+  });
+
+  it("gpt-image-2 supports the new size presets", () => {
+    const c = modelCapabilities("gpt-image-2");
+    expect(c.validSizes).toContain("2048x2048");
+    expect(c.validSizes).toContain("3840x2160");
+  });
+
+  it("resolveModelId maps nano-banana to gemini-2.5-flash-image", () => {
+    expect(resolveModelId("nano-banana")).toBe("gemini-2.5-flash-image");
+  });
+
+  it("resolveModelId is identity for unknown ids", () => {
+    expect(resolveModelId("gpt-image-1.5")).toBe("gpt-image-1.5");
+    expect(resolveModelId("not-a-model")).toBe("not-a-model");
+  });
+
+  it("modelCapabilities resolves nano-banana alias", () => {
+    const c = modelCapabilities("nano-banana");
+    expect(c.modelId).toBe("gemini-2.5-flash-image");
+    expect(c.providerId).toBe("google");
+  });
+
+  it("providerForModel resolves nano-banana alias", () => {
+    expect(providerForModel("nano-banana")).toBe("google");
   });
 });

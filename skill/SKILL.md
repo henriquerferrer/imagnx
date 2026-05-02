@@ -3,8 +3,8 @@ name: imagn
 description: Generate or edit images with multi-model AI (OpenAI, Gemini Nano Banana). Use when the user says "generate an image", "create a picture", "make an image", "edit this photo", "change the background", or invokes /imagn.
 when_to_use: Trigger on image generation or editing requests. Skip for metaphorical phrases ("paint a picture in your mind") or non-visual tasks.
 disable-model-invocation: false
-allowed-tools: Bash(command -v *) Bash(imagn *) Bash(bun install *) Bash(jq *)
-compatibility: Requires bun runtime and either OPENAI_API_KEY or GEMINI_API_KEY in env.
+allowed-tools: Bash(command -v *) Bash(imagn *) Bash(npm install *) Bash(jq *)
+compatibility: Requires Node.js ≥18 and either OPENAI_API_KEY or GEMINI_API_KEY in env.
 metadata:
   version: "0.1.0"
   repository: github.com/henriquerferrer/imagn
@@ -25,9 +25,9 @@ command -v imagn >/dev/null 2>&1 && imagn --version || echo "MISSING"
 ```
 
 If the output is `MISSING`:
-1. Tell the user: "imagn is not installed. Installing now via `bun install -g github.com/henriquerferrer/imagn`."
-2. Run: `bun install -g github.com/henriquerferrer/imagn`
-3. Verify: `imagn --version`. If still missing, print: "Manual install: clone https://github.com/henriquerferrer/imagn and run `bun install -g .`" and stop.
+1. Tell the user: "imagn is not installed. Installing now via `npm install -g github.com/henriquerferrer/imagn`."
+2. Run: `npm install -g github.com/henriquerferrer/imagn`
+3. Verify: `imagn --version`. If still missing, print: "Manual install: clone https://github.com/henriquerferrer/imagn and run `npm install -g .`" and stop.
 
 ## Step 2 — Parse the request
 

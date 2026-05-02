@@ -1,5 +1,5 @@
-import { InvalidArgs, UnsupportedFeature } from "./errors";
-import type { Quality, Size } from "./providers/types";
+import { InvalidArgs, UnsupportedFeature } from "./errors.js";
+import type { Quality, Size } from "./providers/types.js";
 
 export interface ModelCapabilities {
   modelId: string;
@@ -19,6 +19,26 @@ const CAPABILITIES: Record<string, ModelCapabilities> = {
     supportsEdit: true,
     supportsMask: true,
     validSizes: ["auto", "1024x1024", "1536x1024", "1024x1536"],
+    defaultQuality: "high",
+    maxRefImages: 16,
+  },
+  "gpt-image-2": {
+    modelId: "gpt-image-2",
+    providerId: "openai",
+    supportsEdit: true,
+    supportsMask: true,
+    // Popular presets only. The API also accepts any custom WxH where edges are
+    // multiples of 16, max edge 3840, aspect <=3:1, total pixels 655,360-8,294,400.
+    validSizes: [
+      "auto",
+      "1024x1024",
+      "1536x1024",
+      "1024x1536",
+      "2048x2048",
+      "2048x1152",
+      "3840x2160",
+      "2160x3840",
+    ],
     defaultQuality: "high",
     maxRefImages: 16,
   },
@@ -44,12 +64,20 @@ const CAPABILITIES: Record<string, ModelCapabilities> = {
   },
 };
 
+const ALIASES: Record<string, string> = {
+  "nano-banana": "gemini-2.5-flash-image",
+};
+
+export function resolveModelId(input: string): string {
+  return ALIASES[input] ?? input;
+}
+
 export const KNOWN_MODELS: ReadonlyArray<string> = Object.values(CAPABILITIES)
   .filter((c) => c.enabled !== false)
   .map((c) => c.modelId);
 
 export function modelCapabilities(modelId: string): ModelCapabilities {
-  const cap = CAPABILITIES[modelId];
+  const cap = CAPABILITIES[resolveModelId(modelId)];
   if (!cap) {
     throw new InvalidArgs(
       `Unknown model "${modelId}". Known: ${KNOWN_MODELS.join(", ")}`,

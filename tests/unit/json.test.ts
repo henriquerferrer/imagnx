@@ -1,5 +1,5 @@
-import { describe, it, expect } from "bun:test";
-import { formatJsonOutput, type SavedResult } from "../../src/json";
+import { describe, it, expect } from "vitest";
+import { formatJsonOutput, type SavedResult } from "../../src/json.js";
 
 describe("formatJsonOutput", () => {
   it("produces results array and empty errors when all succeed", () => {
@@ -8,13 +8,12 @@ describe("formatJsonOutput", () => {
         path: "/tmp/a.png",
         modelId: "gpt-image-1.5",
         mimeType: "image/png",
-        costEstimateUsd: 0.04,
       },
     ];
     const out = JSON.parse(formatJsonOutput(saved, []));
     expect(out.results).toHaveLength(1);
     expect(out.results[0].path).toBe("/tmp/a.png");
-    expect(out.results[0].costEstimateUsd).toBe(0.04);
+    expect(out.results[0].mimeType).toBe("image/png");
     expect(out.errors).toEqual([]);
   });
 

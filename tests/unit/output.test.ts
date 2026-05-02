@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { tmpdir } from "node:os";
 import { mkdtempSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -7,8 +7,8 @@ import {
   resolveOutputPath,
   writeImageBytes,
   type OutputContext,
-} from "../../src/output";
-import { InvalidArgs } from "../../src/errors";
+} from "../../src/output.js";
+import { InvalidArgs } from "../../src/errors.js";
 
 describe("slugify", () => {
   it("takes up to 6 words, lowercased, hyphenated", () => {

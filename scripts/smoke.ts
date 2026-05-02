@@ -1,7 +1,7 @@
-#!/usr/bin/env bun
 // Manual real-API verification before releases. Costs cents.
-import { createOpenAIProvider } from "../src/providers/openai";
-import { createGeminiProvider } from "../src/providers/gemini";
+// Run via `npm run smoke` (uses tsx).
+import { createOpenAIProvider } from "../src/providers/openai.js";
+import { createGeminiProvider } from "../src/providers/gemini.js";
 
 async function smoke() {
   const out: string[] = [];

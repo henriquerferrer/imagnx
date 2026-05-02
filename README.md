@@ -4,8 +4,12 @@ Multi-model image generation CLI. Supports OpenAI (`gpt-image-1.5`, `gpt-image-2
 
 ## Install
 
+Requires Node.js ≥18.
+
 ```bash
-bun install -g github.com/henriquerferrer/imagn
+npm install -g imagn          # once published
+# or, from source:
+npm install -g github.com/henriquerferrer/imagn   # builds dist/ via prepare hook
 ```
 
 ## Quick start
@@ -20,18 +24,35 @@ imagn edit photo.png "give the cat a red helmet"
 
 ## Skill (Claude Code)
 
+Install via [`npx skills`](https://github.com/vercel-labs/skills) (the community skill package manager):
+
 ```bash
-npx skills add github.com/henriquerferrer/imagn/skill
+npx skills add https://github.com/henriquerferrer/imagn/tree/main/skill
+```
+
+Or install manually by copying `skill/` into your skills directory:
+
+```bash
+# user-level (all projects)
+mkdir -p ~/.claude/skills/imagn
+curl -fsSL https://raw.githubusercontent.com/henriquerferrer/imagn/main/skill/SKILL.md     -o ~/.claude/skills/imagn/SKILL.md
+curl -fsSL https://raw.githubusercontent.com/henriquerferrer/imagn/main/skill/reference.md -o ~/.claude/skills/imagn/reference.md
+
+# project-level
+mkdir -p .claude/skills/imagn && cp -r path/to/imagn/skill/* .claude/skills/imagn/
 ```
 
 The skill auto-detects when the CLI is missing and installs it on first use.
 
 ## Models
 
-| Provider | Model | Edit | Mask |
-|---|---|---|---|
-| OpenAI | `gpt-image-1.5` | ✓ | ✓ |
-| Google | `gemini-2.5-flash-image` (Nano Banana) | ✓ | ✗ |
+| Provider | Model | Edit | Mask | Sizes |
+|---|---|---|---|---|
+| OpenAI | `gpt-image-1.5` | ✓ | ✓ | up to 1536×1024 |
+| OpenAI | `gpt-image-2` | ✓ | ✓ | up to 3840×2160 |
+| Google | `gemini-2.5-flash-image` | ✓ | ✗ | auto |
+
+`nano-banana` is an alias for `gemini-2.5-flash-image`. See [`skill/reference.md`](skill/reference.md) for the full flag list and exit codes.
 
 ## Configuration
 
@@ -50,7 +71,9 @@ Resolution order: hard-coded defaults → config file → env vars → CLI flags
 ## Development
 
 ```bash
-bun install
-bun test
-bun run scripts/smoke.ts   # real API calls; needs keys set
+npm install
+npm test                   # vitest
+npm run typecheck          # tsc --noEmit
+npm run build              # writes dist/ via tsc
+npm run smoke              # real API calls; needs keys set
 ```

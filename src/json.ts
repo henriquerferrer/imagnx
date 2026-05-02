@@ -2,7 +2,6 @@ export interface SavedResult {
   path: string;
   modelId: string;
   mimeType: string;
-  costEstimateUsd?: number;
 }
 
 export interface SerializedFailure {

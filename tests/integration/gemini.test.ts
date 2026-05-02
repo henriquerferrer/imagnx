@@ -1,12 +1,14 @@
-import { describe, it, expect, afterEach } from "bun:test";
+import { describe, it, expect, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { createGeminiProvider } from "../../src/providers/gemini";
-import { installFetchMock } from "../helpers/fetch-mock";
-import { ProviderError } from "../../src/errors";
+import { fileURLToPath } from "node:url";
+import { createGeminiProvider } from "../../src/providers/gemini.js";
+import { installFetchMock } from "../helpers/fetch-mock.js";
+import { ProviderError } from "../../src/errors.js";
 
+const HERE = fileURLToPath(new URL(".", import.meta.url));
 const FIX = (name: string) =>
-  readFileSync(join(import.meta.dir, "fixtures", name), "utf8");
+  readFileSync(join(HERE, "fixtures", name), "utf8");
 
 describe("gemini provider", () => {
   let restore: (() => void) | undefined;
@@ -55,10 +57,12 @@ describe("gemini provider", () => {
       refImages: [new Uint8Array([137, 80, 78, 71])],
     });
     expect(results).toHaveLength(1);
-    const body = JSON.parse(String(mock.calls[0]!.init!.body));
-    const parts = body.contents[0].parts;
-    const hasImage = parts.some((p: any) => p.inlineData);
-    const hasText = parts.some((p: any) => p.text);
+    const body = JSON.parse(String(mock.calls[0]!.init!.body)) as {
+      contents: Array<{ parts: Array<Record<string, unknown>> }>;
+    };
+    const parts = body.contents[0]!.parts;
+    const hasImage = parts.some((p) => "inlineData" in p);
+    const hasText = parts.some((p) => "text" in p);
     expect(hasImage).toBe(true);
     expect(hasText).toBe(true);
   });

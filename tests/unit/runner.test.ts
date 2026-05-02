@@ -1,7 +1,7 @@
-import { describe, it, expect } from "bun:test";
-import { runFanOut, type RunRequest } from "../../src/runner";
-import type { Provider, ImageResult, GenerateInput, EditInput } from "../../src/providers/types";
-import { ProviderError } from "../../src/errors";
+import { describe, it, expect } from "vitest";
+import { runFanOut, type RunRequest } from "../../src/runner.js";
+import type { Provider, ImageResult, GenerateInput, EditInput } from "../../src/providers/types.js";
+import { ProviderError } from "../../src/errors.js";
 
 function fakeProvider(id: string, models: string[], behavior: "ok" | "fail"): Provider {
   return {

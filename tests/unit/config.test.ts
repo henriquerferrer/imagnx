@@ -1,11 +1,13 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import {
   resolveConfig,
   parseTomlConfig,
   HARD_DEFAULTS,
   apiKeyFor,
-} from "../../src/config";
-import { MissingApiKey } from "../../src/errors";
+  VALID_QUALITIES,
+  VALID_SIZES,
+} from "../../src/config.js";
+import { MissingApiKey } from "../../src/errors.js";
 
 describe("config", () => {
   it("HARD_DEFAULTS contain expected baseline", () => {
@@ -102,5 +104,17 @@ output_dir = "/tmp/imagn"
     });
     // Bad quality is rejected → falls back to HARD_DEFAULTS
     expect(c.defaultQuality).toBe("high");
+  });
+
+  it("VALID_QUALITIES is the canonical set", () => {
+    expect(VALID_QUALITIES).toEqual(["low", "medium", "high", "auto"]);
+  });
+
+  it("VALID_SIZES contains all model presets, including gpt-image-2's", () => {
+    expect(VALID_SIZES).toContain("auto");
+    expect(VALID_SIZES).toContain("1024x1024");
+    expect(VALID_SIZES).toContain("2048x2048");
+    expect(VALID_SIZES).toContain("3840x2160");
+    expect(VALID_SIZES).toContain("2160x3840");
   });
 });

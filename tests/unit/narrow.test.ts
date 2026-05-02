@@ -1,5 +1,5 @@
-import { describe, it, expect } from "bun:test";
-import { narrowEnum, narrowString, narrowBool, getProp } from "../../src/narrow";
+import { describe, it, expect } from "vitest";
+import { narrowEnum, narrowString, narrowBool, getProp } from "../../src/narrow.js";
 
 describe("narrowEnum", () => {
   const ALLOWED = ["low", "medium", "high"] as const;
