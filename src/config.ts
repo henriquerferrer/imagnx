@@ -147,11 +147,11 @@ export function apiKeyFor(
   env: Record<string, string | undefined>,
 ): string {
   if (providerId === "openai") {
-    const key = env.OPENAI_API_KEY;
-    if (!key) throw new MissingApiKey("OPENAI_API_KEY");
+    const key = env.IMAGNX_OPENAI_API_KEY;
+    if (!key) throw new MissingApiKey("IMAGNX_OPENAI_API_KEY");
     return key;
   }
-  const key = env.GEMINI_API_KEY ?? env.GOOGLE_API_KEY;
-  if (!key) throw new MissingApiKey("GEMINI_API_KEY");
+  const key = env.IMAGNX_GEMINI_API_KEY ?? env.IMAGNX_GOOGLE_API_KEY;
+  if (!key) throw new MissingApiKey("IMAGNX_GEMINI_API_KEY");
   return key;
 }

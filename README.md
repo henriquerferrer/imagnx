@@ -7,39 +7,35 @@ Multi-model image generation CLI. Supports OpenAI (`gpt-image-1.5`, `gpt-image-2
 Requires Node.js ≥18.
 
 ```bash
-npm install -g imagnx          # once published
-# or, from source:
-npm install -g github.com/henriquerferrer/imagnx   # builds dist/ via prepare hook
+npm install -g imagnx
 ```
 
 ## Quick start
 
 ```bash
-export OPENAI_API_KEY=sk-...
-export GEMINI_API_KEY=...
+export IMAGNX_OPENAI_API_KEY=sk-...
+export IMAGNX_GEMINI_API_KEY=...
 imagnx "a cat astronaut on the moon"
 imagnx "a cat astronaut on the moon" --compare       # fan out across providers
 imagnx edit photo.png "give the cat a red helmet"
 ```
 
-## Skill (Claude Code)
+Provider keys are read only from the `IMAGNX_`-prefixed names — the conventional `OPENAI_API_KEY` / `GEMINI_API_KEY` / `GOOGLE_API_KEY` are deliberately ignored so imagnx never spends a key the user set up for a different tool.
 
-Install via [`npx skills`](https://github.com/vercel-labs/skills) (the community skill package manager):
+## Skill
+
+Install via [`npx skills`](https://github.com/vercel-labs/skills):
 
 ```bash
 npx skills add https://github.com/henriquerferrer/imagnx/tree/main/skill
 ```
 
-Or install manually by copying `skill/` into your skills directory:
+Or install manually (Claude Code example):
 
 ```bash
-# user-level (all projects)
 mkdir -p ~/.claude/skills/imagnx
-curl -fsSL https://raw.githubusercontent.com/henriquerferrer/imagnx/main/skill/SKILL.md     -o ~/.claude/skills/imagnx/SKILL.md
-curl -fsSL https://raw.githubusercontent.com/henriquerferrer/imagnx/main/skill/reference.md -o ~/.claude/skills/imagnx/reference.md
-
-# project-level
-mkdir -p .claude/skills/imagnx && cp -r path/to/imagnx/skill/* .claude/skills/imagnx/
+curl -fsSL https://raw.githubusercontent.com/henriquerferrer/imagnx/main/skill/SKILL.md \
+  -o ~/.claude/skills/imagnx/SKILL.md
 ```
 
 The skill auto-detects when the CLI is missing and installs it on first use.
@@ -80,7 +76,9 @@ Lookup order: `config.toml` → `config.yml` → `config.yaml` (first match wins
 
 Env var overrides (all `IMAGNX_*`): `IMAGNX_DEFAULT_MODEL`, `IMAGNX_OUTPUT_DIR`, `IMAGNX_DEFAULT_SIZE`, `IMAGNX_DEFAULT_QUALITY`, `IMAGNX_OPEN_AFTER`, `IMAGNX_DEBUG`.
 
-Resolution order: hard-coded defaults → config file → env vars → CLI flags.
+Provider keys: `IMAGNX_OPENAI_API_KEY`, `IMAGNX_GEMINI_API_KEY` (or `IMAGNX_GOOGLE_API_KEY`). Unprefixed `OPENAI_API_KEY` / `GEMINI_API_KEY` / `GOOGLE_API_KEY` are not read — set the `IMAGNX_`-prefixed name explicitly.
+
+Resolution order: hard-coded defaults → config file → env vars → CLI flags. Each later layer overrides any field the earlier one set; unset fields fall through. Example: `defaultModel` starts as `gpt-image-1.5` (hardcode); `default_model = "gpt-image-2"` in the config file replaces it; `IMAGNX_DEFAULT_MODEL=gemini-2.5-flash-image` then beats the file; `imagnx "..." -m gpt-image-1.5` finally wins because flags override env.
 
 ## Development
 

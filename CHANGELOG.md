@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-05-02
+
+### Changed
+
+- **Breaking:** provider API keys are now read only from the
+  `IMAGNX_`-prefixed env vars: `IMAGNX_OPENAI_API_KEY`,
+  `IMAGNX_GEMINI_API_KEY`, `IMAGNX_GOOGLE_API_KEY`. The conventional
+  `OPENAI_API_KEY` / `GEMINI_API_KEY` / `GOOGLE_API_KEY` are no longer
+  read. Rationale: those names typically belong to the user's general
+  OpenAI/Google tooling, and silently spending them through imagnx is
+  the kind of implicit-consent surprise we don't want. Existing users
+  must `export IMAGNX_OPENAI_API_KEY=$OPENAI_API_KEY` (or similar) once.
+- `imagnx config` status output prints the `IMAGNX_*` provider-key
+  names. `MissingApiKey` errors now name the `IMAGNX_*` form.
+- README skill section dropped the "(Claude Code)" qualifier — the
+  `npx skills` install path applies to any skills-aware client.
+- README install section dropped the "from source" `npm install -g
+  github.com/...` line; manual skill install collapsed to a single
+  `curl` for `SKILL.md`.
+
 ## [0.1.3] - 2026-05-02
 
 ### Added

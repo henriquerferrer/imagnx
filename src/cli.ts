@@ -586,9 +586,13 @@ const configCmd = defineCommand({
       const env = process.env;
       const cfg = resolveConfig({ file: loadConfigFile(env), env, flags: {} });
       process.stdout.write(JSON.stringify(cfg, null, 2) + "\n");
-      process.stderr.write(`OPENAI_API_KEY: ${env.OPENAI_API_KEY ? "✓" : "✗"}\n`);
       process.stderr.write(
-        `GEMINI/GOOGLE_API_KEY: ${env.GEMINI_API_KEY || env.GOOGLE_API_KEY ? "✓" : "✗"}\n`,
+        `IMAGNX_OPENAI_API_KEY: ${env.IMAGNX_OPENAI_API_KEY ? "✓" : "✗"}\n`,
+      );
+      process.stderr.write(
+        `IMAGNX_GEMINI_API_KEY (or IMAGNX_GOOGLE_API_KEY): ${
+          env.IMAGNX_GEMINI_API_KEY || env.IMAGNX_GOOGLE_API_KEY ? "✓" : "✗"
+        }\n`,
       );
     });
   },

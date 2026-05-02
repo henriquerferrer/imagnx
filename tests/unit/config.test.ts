@@ -115,12 +115,28 @@ open_after: true
   });
 
   it("apiKeyFor returns key from env", () => {
-    expect(apiKeyFor("openai", { OPENAI_API_KEY: "sk-test" })).toBe("sk-test");
-    expect(apiKeyFor("google", { GEMINI_API_KEY: "g-test" })).toBe("g-test");
+    expect(apiKeyFor("openai", { IMAGNX_OPENAI_API_KEY: "sk-test" })).toBe(
+      "sk-test",
+    );
+    expect(apiKeyFor("google", { IMAGNX_GEMINI_API_KEY: "g-test" })).toBe(
+      "g-test",
+    );
   });
 
-  it("apiKeyFor accepts GOOGLE_API_KEY as fallback for google", () => {
-    expect(apiKeyFor("google", { GOOGLE_API_KEY: "g2" })).toBe("g2");
+  it("apiKeyFor accepts IMAGNX_GOOGLE_API_KEY as alias for google", () => {
+    expect(apiKeyFor("google", { IMAGNX_GOOGLE_API_KEY: "g3" })).toBe("g3");
+  });
+
+  it("apiKeyFor ignores unprefixed provider env vars", () => {
+    expect(() => apiKeyFor("openai", { OPENAI_API_KEY: "sk-other" })).toThrow(
+      MissingApiKey,
+    );
+    expect(() => apiKeyFor("google", { GEMINI_API_KEY: "g-other" })).toThrow(
+      MissingApiKey,
+    );
+    expect(() => apiKeyFor("google", { GOOGLE_API_KEY: "g-other" })).toThrow(
+      MissingApiKey,
+    );
   });
 
   it("apiKeyFor throws MissingApiKey when env is missing", () => {

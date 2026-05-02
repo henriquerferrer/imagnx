@@ -4,7 +4,7 @@ description: Generate or edit images with multi-model AI (OpenAI, Gemini Nano Ba
 when_to_use: Trigger on image generation or editing requests. Skip for metaphorical phrases ("paint a picture in your mind") or non-visual tasks.
 disable-model-invocation: false
 allowed-tools: Bash(command -v *) Bash(imagnx *) Bash(npm install *) Bash(jq *)
-compatibility: Requires Node.js ≥18 and either OPENAI_API_KEY or GEMINI_API_KEY in env.
+compatibility: Requires Node.js ≥18 and either IMAGNX_OPENAI_API_KEY or IMAGNX_GEMINI_API_KEY in env.
 metadata:
   version: "0.1.0"
   repository: github.com/henriquerferrer/imagnx
@@ -65,7 +65,7 @@ From `{ "results": [...], "errors": [...] }`:
 
 | Exit | Action |
 |---|---|
-| 2 (`MissingApiKey`) | Tell the user which env var to set: `export OPENAI_API_KEY=...` or `export GEMINI_API_KEY=...`. |
+| 2 (`MissingApiKey`) | Tell the user which env var to set: `export IMAGNX_OPENAI_API_KEY=...` or `export IMAGNX_GEMINI_API_KEY=...`. Unprefixed `OPENAI_API_KEY` / `GEMINI_API_KEY` are not read by imagnx. |
 | 3 (`UnsupportedFeature`) | Re-run with a model that supports the feature (the message names valid models). |
 | 4 (`InvalidArgs`) | Surface the validation error verbatim; ask the user to correct flags or arguments. |
 | 5 (`RateLimited`) | Tell the user to wait 30–60 seconds and retry the same command. |
