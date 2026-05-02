@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-05-02
+
+### Changed
+
+- `skill/SKILL.md` rewritten for Anthropic Skills best practices:
+  trigger-forward `description` (verb list plus a `SKIP:` clause)
+  to maximize correct triggering; dropped the always-run pre-flight
+  install gate (no official Anthropic skill uses one) in favor of an
+  inline recovery note when `imagnx` is not on PATH; dropped the
+  side-effect notice banner (warnings live action-adjacent in
+  reference skills); dropped the non-standard `compatibility` and
+  `when_to_use` frontmatter (description is the canonical place for
+  trigger info per `skill-creator`).
+- README and `skill/reference.md`: stripped em dashes; tightened the
+  "ignored unprefixed env vars" copy and removed the shell-history
+  caveat from the `imagnx login --openai` section.
+
 ## [0.1.5] - 2026-05-02
 
 ### Added
@@ -53,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   must `export IMAGNX_OPENAI_API_KEY=$OPENAI_API_KEY` (or similar) once.
 - `imagnx config` status output prints the `IMAGNX_*` provider-key
   names. `MissingApiKey` errors now name the `IMAGNX_*` form.
-- README skill section dropped the "(Claude Code)" qualifier — the
+- README skill section dropped the "(Claude Code)" qualifier; the
   `npx skills` install path applies to any skills-aware client.
 - README install section dropped the "from source" `npm install -g
   github.com/...` line; manual skill install collapsed to a single
@@ -173,7 +190,7 @@ Initial public release.
 
 ### Removed
 
-- `costEstimateUsd` field from `ImageResult` and `SavedResult` — was never
+- `costEstimateUsd` field from `ImageResult` and `SavedResult`; was never
   populated by any provider. Will return when implemented end-to-end.
 - Unused `openai-edit-mask.json` integration fixture.
 - Unused `debug` field on `SharedGenerateOpts` (the catch handler reads

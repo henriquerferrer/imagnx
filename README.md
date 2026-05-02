@@ -26,7 +26,7 @@ export IMAGNX_OPENAI_API_KEY=sk-...
 export IMAGNX_GEMINI_API_KEY=...
 ```
 
-Provider keys come from the `IMAGNX_`-prefixed env vars or `~/.imagnx/credentials.toml` — the conventional `OPENAI_API_KEY` / `GEMINI_API_KEY` / `GOOGLE_API_KEY` are deliberately ignored so imagnx never spends a key the user set up for a different tool.
+Provider keys come from the `IMAGNX_`-prefixed env vars or `~/.imagnx/credentials.toml`.
 
 ## Skill
 
@@ -68,7 +68,7 @@ default_quality  = "high"
 open_after       = false
 ```
 
-YAML works too — drop a `~/.imagnx/config.yml` (or `.yaml`) instead:
+YAML works too. Drop a `~/.imagnx/config.yml` (or `.yaml`) instead:
 
 ```yaml
 default_model: gpt-image-1.5
@@ -86,23 +86,21 @@ Provider keys: `IMAGNX_OPENAI_API_KEY`, `IMAGNX_GEMINI_API_KEY` (or `IMAGNX_GOOG
 
 Or run `imagnx login` to be prompted for each key (input is hidden, blank skips a provider, and existing values are kept on re-run). It writes `~/.imagnx/credentials.toml` with mode 600.
 
-For one-shot / scripted use (e.g. Claude Code), pass keys as flags — the prompt is skipped:
+For one-shot / scripted use (e.g. Claude Code), pass keys as flags so the prompt is skipped:
 
 ```bash
 imagnx login --openai sk-... --gemini g-...
 imagnx login --gemini g-...     # only update one provider
 ```
 
-Caveat: keys passed as flags land in shell history and `ps` output. Fine for one-off setup; use the interactive form if that matters.
-
-You can also create the file by hand (TOML, plus `.yml` / `.yaml` — same lookup order as `config`):
+You can also create the file by hand (TOML, plus `.yml` / `.yaml`, same lookup order as `config`):
 
 ```toml
 openai_api_key = "sk-..."
 gemini_api_key = "..."   # or google_api_key
 ```
 
-If you write the file manually, run `chmod 600 ~/.imagnx/credentials.toml` — imagnx warns on startup if the file is group/world-readable.
+If you write the file manually, run `chmod 600 ~/.imagnx/credentials.toml`. imagnx warns on startup if the file is group/world-readable.
 
 Env vars win over the credentials file when both are set, so you can override per-shell without editing the file. Keep `credentials.*` out of any dotfiles repo you sync; `config.*` is safe to commit.
 
