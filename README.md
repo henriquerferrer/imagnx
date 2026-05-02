@@ -13,14 +13,20 @@ npm install -g imagnx
 ## Quick start
 
 ```bash
-export IMAGNX_OPENAI_API_KEY=sk-...
-export IMAGNX_GEMINI_API_KEY=...
+imagnx login                                         # interactive: prompts for keys, writes ~/.imagnx/credentials.toml
 imagnx "a cat astronaut on the moon"
 imagnx "a cat astronaut on the moon" --compare       # fan out across providers
 imagnx edit photo.png "give the cat a red helmet"
 ```
 
-Provider keys are read only from the `IMAGNX_`-prefixed names — the conventional `OPENAI_API_KEY` / `GEMINI_API_KEY` / `GOOGLE_API_KEY` are deliberately ignored so imagnx never spends a key the user set up for a different tool.
+Or skip the login step and use env vars instead:
+
+```bash
+export IMAGNX_OPENAI_API_KEY=sk-...
+export IMAGNX_GEMINI_API_KEY=...
+```
+
+Provider keys come from the `IMAGNX_`-prefixed env vars or `~/.imagnx/credentials.toml` — the conventional `OPENAI_API_KEY` / `GEMINI_API_KEY` / `GOOGLE_API_KEY` are deliberately ignored so imagnx never spends a key the user set up for a different tool.
 
 ## Skill
 
@@ -76,9 +82,33 @@ Lookup order: `config.toml` → `config.yml` → `config.yaml` (first match wins
 
 Env var overrides (all `IMAGNX_*`): `IMAGNX_DEFAULT_MODEL`, `IMAGNX_OUTPUT_DIR`, `IMAGNX_DEFAULT_SIZE`, `IMAGNX_DEFAULT_QUALITY`, `IMAGNX_OPEN_AFTER`, `IMAGNX_DEBUG`.
 
-Provider keys: `IMAGNX_OPENAI_API_KEY`, `IMAGNX_GEMINI_API_KEY` (or `IMAGNX_GOOGLE_API_KEY`). Unprefixed `OPENAI_API_KEY` / `GEMINI_API_KEY` / `GOOGLE_API_KEY` are not read — set the `IMAGNX_`-prefixed name explicitly.
+Provider keys: `IMAGNX_OPENAI_API_KEY`, `IMAGNX_GEMINI_API_KEY` (or `IMAGNX_GOOGLE_API_KEY`).
 
-Resolution order: hard-coded defaults → config file → env vars → CLI flags. Each later layer overrides any field the earlier one set; unset fields fall through. Example: `defaultModel` starts as `gpt-image-1.5` (hardcode); `default_model = "gpt-image-2"` in the config file replaces it; `IMAGNX_DEFAULT_MODEL=gemini-2.5-flash-image` then beats the file; `imagnx "..." -m gpt-image-1.5` finally wins because flags override env.
+Or run `imagnx login` to be prompted for each key (input is hidden, blank skips a provider, and existing values are kept on re-run). It writes `~/.imagnx/credentials.toml` with mode 600.
+
+For one-shot / scripted use (e.g. Claude Code), pass keys as flags — the prompt is skipped:
+
+```bash
+imagnx login --openai sk-... --gemini g-...
+imagnx login --gemini g-...     # only update one provider
+```
+
+Caveat: keys passed as flags land in shell history and `ps` output. Fine for one-off setup; use the interactive form if that matters.
+
+You can also create the file by hand (TOML, plus `.yml` / `.yaml` — same lookup order as `config`):
+
+```toml
+openai_api_key = "sk-..."
+gemini_api_key = "..."   # or google_api_key
+```
+
+If you write the file manually, run `chmod 600 ~/.imagnx/credentials.toml` — imagnx warns on startup if the file is group/world-readable.
+
+Env vars win over the credentials file when both are set, so you can override per-shell without editing the file. Keep `credentials.*` out of any dotfiles repo you sync; `config.*` is safe to commit.
+
+Resolution order:
+- **non-secret config** (model, output dir, etc.): hard-coded defaults → config file → env vars → CLI flags
+- **provider keys**: env vars → credentials file (env wins so a one-shot `IMAGNX_OPENAI_API_KEY=… imagnx …` overrides the saved key)
 
 ## Development
 

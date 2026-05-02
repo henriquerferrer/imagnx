@@ -1,6 +1,6 @@
 {
   "name": "imagnx",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Multi-model image generation CLI",
   "license": "MIT",
   "author": "Henrique Ferrer",
@@ -25,7 +25,8 @@
     "smoke": "tsx scripts/smoke.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json && chmod +x dist/cli.js",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "version": "node scripts/sync-skill-version.mjs && git add skill/SKILL.md"
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",

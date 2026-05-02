@@ -1,7 +1,7 @@
 import TOML from "@iarna/toml";
 import YAML from "yaml";
 import { homedir } from "node:os";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { MissingApiKey } from "./errors.js";
 import type { Quality, Size } from "./providers/types.js";
@@ -142,16 +142,116 @@ export function loadConfigFile(env: Record<string, string | undefined>): LoadedC
   return undefined;
 }
 
+export interface Credentials {
+  openaiApiKey?: string;
+  geminiApiKey?: string;
+}
+
+function narrowCredentials(data: unknown): Credentials {
+  return {
+    openaiApiKey: narrowString(getProp(data, "openai_api_key")),
+    geminiApiKey:
+      narrowString(getProp(data, "gemini_api_key")) ??
+      narrowString(getProp(data, "google_api_key")),
+  };
+}
+
+export function parseTomlCredentials(text: string): Credentials {
+  return narrowCredentials(TOML.parse(text));
+}
+
+export function parseYamlCredentials(text: string): Credentials {
+  return narrowCredentials(YAML.parse(text));
+}
+
+export interface LoadedCredentials {
+  text: string;
+  format: "toml" | "yaml";
+  path: string;
+  mode: number;
+}
+
+export function loadCredentialsFile(
+  env: Record<string, string | undefined>,
+): LoadedCredentials | undefined {
+  const dir = configDir(env);
+  const candidates: Array<{ name: string; format: "toml" | "yaml" }> = [
+    { name: "credentials.toml", format: "toml" },
+    { name: "credentials.yml", format: "yaml" },
+    { name: "credentials.yaml", format: "yaml" },
+  ];
+  for (const c of candidates) {
+    const path = join(dir, c.name);
+    if (existsSync(path)) {
+      return {
+        text: readFileSync(path, "utf8"),
+        format: c.format,
+        path,
+        mode: statSync(path).mode,
+      };
+    }
+  }
+  return undefined;
+}
+
+export function resolveCredentials(
+  file: LoadedCredentials | undefined,
+): Credentials {
+  if (!file) return {};
+  return file.format === "toml"
+    ? parseTomlCredentials(file.text)
+    : parseYamlCredentials(file.text);
+}
+
+export function mergeCredentials(
+  input: Credentials,
+  existing: Credentials,
+): Credentials {
+  return {
+    openaiApiKey: input.openaiApiKey || existing.openaiApiKey,
+    geminiApiKey: input.geminiApiKey || existing.geminiApiKey,
+  };
+}
+
+function escapeTomlBasicString(s: string): string {
+  let out = "";
+  for (const ch of s) {
+    const code = ch.charCodeAt(0);
+    if (ch === "\\") out += "\\\\";
+    else if (ch === '"') out += '\\"';
+    else if (ch === "\b") out += "\\b";
+    else if (ch === "\t") out += "\\t";
+    else if (ch === "\n") out += "\\n";
+    else if (ch === "\f") out += "\\f";
+    else if (ch === "\r") out += "\\r";
+    else if (code < 0x20 || code === 0x7f)
+      out += "\\u" + code.toString(16).padStart(4, "0");
+    else out += ch;
+  }
+  return `"${out}"`;
+}
+
+export function serializeCredentialsToml(creds: Credentials): string {
+  const lines: string[] = [];
+  if (creds.openaiApiKey)
+    lines.push(`openai_api_key = ${escapeTomlBasicString(creds.openaiApiKey)}`);
+  if (creds.geminiApiKey)
+    lines.push(`gemini_api_key = ${escapeTomlBasicString(creds.geminiApiKey)}`);
+  return lines.length > 0 ? lines.join("\n") + "\n" : "";
+}
+
 export function apiKeyFor(
   providerId: "openai" | "google",
   env: Record<string, string | undefined>,
+  creds: Credentials = {},
 ): string {
   if (providerId === "openai") {
-    const key = env.IMAGNX_OPENAI_API_KEY;
+    const key = env.IMAGNX_OPENAI_API_KEY ?? creds.openaiApiKey;
     if (!key) throw new MissingApiKey("IMAGNX_OPENAI_API_KEY");
     return key;
   }
-  const key = env.IMAGNX_GEMINI_API_KEY ?? env.IMAGNX_GOOGLE_API_KEY;
+  const key =
+    env.IMAGNX_GEMINI_API_KEY ?? env.IMAGNX_GOOGLE_API_KEY ?? creds.geminiApiKey;
   if (!key) throw new MissingApiKey("IMAGNX_GEMINI_API_KEY");
   return key;
 }

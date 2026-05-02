@@ -3,6 +3,10 @@ import {
   resolveConfig,
   parseTomlConfig,
   parseYamlConfig,
+  parseTomlCredentials,
+  parseYamlCredentials,
+  mergeCredentials,
+  serializeCredentialsToml,
   HARD_DEFAULTS,
   apiKeyFor,
   VALID_QUALITIES,
@@ -141,6 +145,87 @@ open_after: true
 
   it("apiKeyFor throws MissingApiKey when env is missing", () => {
     expect(() => apiKeyFor("openai", {})).toThrow(MissingApiKey);
+  });
+
+  it("parseTomlCredentials reads openai_api_key and gemini_api_key", () => {
+    const c = parseTomlCredentials(`
+openai_api_key = "sk-from-file"
+gemini_api_key = "g-from-file"
+`);
+    expect(c.openaiApiKey).toBe("sk-from-file");
+    expect(c.geminiApiKey).toBe("g-from-file");
+  });
+
+  it("parseYamlCredentials reads openai_api_key and gemini_api_key", () => {
+    const c = parseYamlCredentials(`
+openai_api_key: sk-yaml
+gemini_api_key: g-yaml
+`);
+    expect(c.openaiApiKey).toBe("sk-yaml");
+    expect(c.geminiApiKey).toBe("g-yaml");
+  });
+
+  it("parseTomlCredentials accepts google_api_key as alias for gemini", () => {
+    const c = parseTomlCredentials('google_api_key = "g-alias"');
+    expect(c.geminiApiKey).toBe("g-alias");
+  });
+
+  it("apiKeyFor falls back to credentials file when env is unset", () => {
+    expect(apiKeyFor("openai", {}, { openaiApiKey: "sk-file" })).toBe(
+      "sk-file",
+    );
+    expect(apiKeyFor("google", {}, { geminiApiKey: "g-file" })).toBe("g-file");
+  });
+
+  it("apiKeyFor: env wins over credentials file", () => {
+    expect(
+      apiKeyFor(
+        "openai",
+        { IMAGNX_OPENAI_API_KEY: "sk-env" },
+        { openaiApiKey: "sk-file" },
+      ),
+    ).toBe("sk-env");
+  });
+
+  it("apiKeyFor throws when both env and credentials are missing", () => {
+    expect(() => apiKeyFor("openai", {}, {})).toThrow(MissingApiKey);
+    expect(() => apiKeyFor("google", {}, {})).toThrow(MissingApiKey);
+  });
+
+  it("mergeCredentials: empty input keeps existing", () => {
+    const out = mergeCredentials(
+      {},
+      { openaiApiKey: "sk-old", geminiApiKey: "g-old" },
+    );
+    expect(out).toEqual({ openaiApiKey: "sk-old", geminiApiKey: "g-old" });
+  });
+
+  it("mergeCredentials: input wins when set", () => {
+    const out = mergeCredentials(
+      { openaiApiKey: "sk-new" },
+      { openaiApiKey: "sk-old", geminiApiKey: "g-old" },
+    );
+    expect(out).toEqual({ openaiApiKey: "sk-new", geminiApiKey: "g-old" });
+  });
+
+  it("serializeCredentialsToml writes only set fields", () => {
+    expect(serializeCredentialsToml({})).toBe("");
+    expect(serializeCredentialsToml({ openaiApiKey: "sk-x" })).toBe(
+      'openai_api_key = "sk-x"\n',
+    );
+    expect(
+      serializeCredentialsToml({ openaiApiKey: "sk-x", geminiApiKey: "g-y" }),
+    ).toBe('openai_api_key = "sk-x"\ngemini_api_key = "g-y"\n');
+  });
+
+  it("serializeCredentialsToml escapes backslash and double-quote", () => {
+    const out = serializeCredentialsToml({ openaiApiKey: 'a\\b"c' });
+    expect(out).toBe('openai_api_key = "a\\\\b\\"c"\n');
+  });
+
+  it("credentials TOML round-trips through parse/serialize", () => {
+    const c = { openaiApiKey: "sk-rt", geminiApiKey: "g-rt" };
+    expect(parseTomlCredentials(serializeCredentialsToml(c))).toEqual(c);
   });
 
   it("parseTomlConfig rejects non-string default_model", () => {

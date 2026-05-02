@@ -7,6 +7,7 @@
 - `imagnx edit <refs...> "<prompt>" [flags]` — edits with reference images.
 - `imagnx models` — list models per provider with capabilities.
 - `imagnx init` — write a starter `~/.imagnx/config.toml`.
+- `imagnx login [--openai <key>] [--gemini <key>]` — save provider keys to `~/.imagnx/credentials.toml` (mode 600). Interactive (hidden prompt) when no flags; flags skip prompts and are agent-friendly.
 - `imagnx config` — print resolved config and key status.
 
 ## Flags

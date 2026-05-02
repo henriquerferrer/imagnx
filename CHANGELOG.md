@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-05-02
+
+### Added
+
+- `~/.imagnx/credentials.toml` (or `.yml` / `.yaml`) for storing
+  provider API keys outside env vars. Lookup mirrors the existing
+  config-file pattern: `credentials.toml` → `credentials.yml` →
+  `credentials.yaml`. Fields: `openai_api_key`, `gemini_api_key` (or
+  `google_api_key` as an alias). Env vars still win over the file so
+  `IMAGNX_OPENAI_API_KEY=… imagnx …` overrides per-shell.
+- `imagnx login` subcommand. Interactive form prompts for each key
+  with hidden stdin input; blank skips a provider, existing values
+  are preserved on re-run. Non-interactive form: `imagnx login
+  --openai <key> [--gemini <key>]` skips the prompts (agent-friendly;
+  keys land in shell history). The file is written with mode 600.
+- Startup warning when the credentials file is group/world-readable,
+  pointing at `chmod 600`.
+- `scripts/sync-skill-version.mjs` plus a `version` npm-lifecycle
+  hook that keeps `skill/SKILL.md`'s `metadata.version` in lock-step
+  with `package.json#version` on every `npm version <bump>`.
+
+### Changed
+
+- `imagnx config` now reports `openai key: ✓/✗` and `gemini key:
+  ✓/✗` based on env-or-file presence, and prints the credentials
+  file path when one is loaded.
+- README + skill docs: quick-start leads with `imagnx login`; the
+  resolution order is split into two ladders (config: defaults →
+  file → env → flags / provider keys: env → file); the
+  `MissingApiKey` recovery in `skill/SKILL.md` recommends `imagnx
+  login --openai <key>` as the primary remediation.
+
 ## [0.1.4] - 2026-05-02
 
 ### Changed

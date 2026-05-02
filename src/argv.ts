@@ -21,6 +21,7 @@ export const KNOWN_SUBCOMMANDS = new Set([
   "edit",
   "models",
   "init",
+  "login",
   "config",
 ]);
 
