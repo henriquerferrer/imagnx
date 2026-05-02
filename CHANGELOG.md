@@ -15,7 +15,7 @@ Initial public release.
 
 - Multi-model image generation CLI with subcommands `generate`, `edit`,
   `models`, `init`, `config`, plus a bare-prompt shorthand
-  (`imagn "<prompt>"`).
+  (`imagnx "<prompt>"`).
 - Providers: OpenAI (`gpt-image-1.5`, `gpt-image-2`) and Google
   (`gemini-2.5-flash-image`, alias `nano-banana`).
 - `gpt-image-2` size matrix: `1024x1024`, `1536x1024`, `1024x1536`,
@@ -62,7 +62,7 @@ Initial public release.
 ### Fixed
 
 - Bare-prompt shorthand routing when string flags precede the prompt
-  (`imagn -m gpt-image-2 "..."`). The argv preprocessor previously
+  (`imagnx -m gpt-image-2 "..."`). The argv preprocessor previously
   injected `generate` between the flag-value pair and the prompt, which
   citty's parent-command parser mis-routed as `Unknown command
   gpt-image-2`. The patcher now injects `generate` at position 0 whenever

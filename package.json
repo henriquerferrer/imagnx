@@ -1,5 +1,5 @@
 {
-  "name": "imagn",
+  "name": "imagnx",
   "version": "0.1.0",
   "description": "Multi-model image generation CLI",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "type": "module",
   "bin": {
-    "imagn": "dist/cli.js"
+    "imagnx": "dist/cli.js"
   },
   "files": [
     "dist",

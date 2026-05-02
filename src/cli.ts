@@ -458,7 +458,7 @@ const editCmd = defineCommand({
       const positionals: string[] = args._;
       if (positionals.length < 2) {
         throw new InvalidArgs(
-          "edit requires at least one reference image and a prompt. Usage: imagn edit <ref...> <prompt>",
+          "edit requires at least one reference image and a prompt. Usage: imagnx edit <ref...> <prompt>",
         );
       }
       const prompt = positionals[positionals.length - 1]!;
@@ -537,19 +537,19 @@ const modelsCmd = defineCommand({
 const initCmd = defineCommand({
   meta: {
     name: "init",
-    description: "Write a starter ~/.config/imagn/config.toml",
+    description: "Write a starter ~/.config/imagnx/config.toml",
   },
   run() {
     return withExitCode(async () => {
       const home = process.env.HOME ?? "";
       const xdg = process.env.XDG_CONFIG_HOME ?? `${home}/.config`;
-      const dir = `${xdg}/imagn`;
+      const dir = `${xdg}/imagnx`;
       const path = `${dir}/config.toml`;
       const { mkdir, writeFile } = await import("node:fs/promises");
       await mkdir(dir, { recursive: true });
-      const sample = `# imagn configuration
+      const sample = `# imagnx configuration
 default_model    = "gpt-image-1.5"
-output_dir       = "~/Pictures/imagn"
+output_dir       = "~/Pictures/imagnx"
 default_size     = "auto"
 default_quality  = "high"
 open_after       = false
@@ -601,7 +601,7 @@ const configCmd = defineCommand({
 
 const main = defineCommand({
   meta: {
-    name: "imagn",
+    name: "imagnx",
     version: pkg.version,
     description: "Multi-model image generation CLI",
   },

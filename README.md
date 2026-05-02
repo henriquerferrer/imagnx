@@ -1,4 +1,4 @@
-# imagn
+# imagnx
 
 Multi-model image generation CLI. Supports OpenAI (`gpt-image-1.5`, `gpt-image-2`) and Google (`gemini-2.5-flash-image` aka Nano Banana).
 
@@ -7,7 +7,7 @@ Multi-model image generation CLI. Supports OpenAI (`gpt-image-1.5`, `gpt-image-2
 Requires Node.js ≥18.
 
 ```bash
-npm install -g imagn          # once published
+npm install -g imagnx          # once published
 # or, from source:
 npm install -g github.com/henriquerferrer/imagn   # builds dist/ via prepare hook
 ```
@@ -17,9 +17,9 @@ npm install -g github.com/henriquerferrer/imagn   # builds dist/ via prepare hoo
 ```bash
 export OPENAI_API_KEY=sk-...
 export GEMINI_API_KEY=...
-imagn "a cat astronaut on the moon"
-imagn "a cat astronaut on the moon" --compare       # fan out across providers
-imagn edit photo.png "give the cat a red helmet"
+imagnx "a cat astronaut on the moon"
+imagnx "a cat astronaut on the moon" --compare       # fan out across providers
+imagnx edit photo.png "give the cat a red helmet"
 ```
 
 ## Skill (Claude Code)
@@ -34,12 +34,12 @@ Or install manually by copying `skill/` into your skills directory:
 
 ```bash
 # user-level (all projects)
-mkdir -p ~/.claude/skills/imagn
-curl -fsSL https://raw.githubusercontent.com/henriquerferrer/imagn/main/skill/SKILL.md     -o ~/.claude/skills/imagn/SKILL.md
-curl -fsSL https://raw.githubusercontent.com/henriquerferrer/imagn/main/skill/reference.md -o ~/.claude/skills/imagn/reference.md
+mkdir -p ~/.claude/skills/imagnx
+curl -fsSL https://raw.githubusercontent.com/henriquerferrer/imagn/main/skill/SKILL.md     -o ~/.claude/skills/imagnx/SKILL.md
+curl -fsSL https://raw.githubusercontent.com/henriquerferrer/imagn/main/skill/reference.md -o ~/.claude/skills/imagnx/reference.md
 
 # project-level
-mkdir -p .claude/skills/imagn && cp -r path/to/imagn/skill/* .claude/skills/imagn/
+mkdir -p .claude/skills/imagnx && cp -r path/to/imagnx/skill/* .claude/skills/imagnx/
 ```
 
 The skill auto-detects when the CLI is missing and installs it on first use.
@@ -56,11 +56,11 @@ The skill auto-detects when the CLI is missing and installs it on first use.
 
 ## Configuration
 
-Run `imagn init` to create `~/.config/imagn/config.toml`. Defaults:
+Run `imagnx init` to create `~/.config/imagnx/config.toml`. Defaults:
 
 ```toml
 default_model    = "gpt-image-1.5"
-output_dir       = "~/Pictures/imagn"
+output_dir       = "~/Pictures/imagnx"
 default_size     = "auto"
 default_quality  = "high"
 open_after       = false

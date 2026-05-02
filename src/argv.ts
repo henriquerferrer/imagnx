@@ -1,5 +1,5 @@
 // Why this exists:
-// `imagn "my prompt"` should be a shorthand for `imagn generate "my prompt"`.
+// `imagnx "my prompt"` should be a shorthand for `imagnx generate "my prompt"`.
 // Citty (>=0.1.6) tries to match the first non-flag positional against
 // subcommand names; when it doesn't match, it errors with "Unknown command"
 // instead of routing to the parent's `run`. We pre-process argv to inject
@@ -14,7 +14,7 @@
 // route to the subcommand, which then parses its own flags correctly.
 //
 // We still need STRING_FLAGS to detect subcommand-vs-flag-value when the user
-// writes `imagn generate -m foo`: without it we'd inject `generate` again
+// writes `imagnx generate -m foo`: without it we'd inject `generate` again
 // before `foo` and break the call.
 export const KNOWN_SUBCOMMANDS = new Set([
   "generate",

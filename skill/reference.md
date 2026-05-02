@@ -1,13 +1,13 @@
-# imagn reference
+# imagnx reference
 
 ## Commands
 
-- `imagn "<prompt>" [flags]` — generation shorthand.
-- `imagn generate "<prompt>" [flags]` — explicit form.
-- `imagn edit <refs...> "<prompt>" [flags]` — edits with reference images.
-- `imagn models` — list models per provider with capabilities.
-- `imagn init` — write a starter `~/.config/imagn/config.toml`.
-- `imagn config` — print resolved config and key status.
+- `imagnx "<prompt>" [flags]` — generation shorthand.
+- `imagnx generate "<prompt>" [flags]` — explicit form.
+- `imagnx edit <refs...> "<prompt>" [flags]` — edits with reference images.
+- `imagnx models` — list models per provider with capabilities.
+- `imagnx init` — write a starter `~/.config/imagnx/config.toml`.
+- `imagnx config` — print resolved config and key status.
 
 ## Flags
 

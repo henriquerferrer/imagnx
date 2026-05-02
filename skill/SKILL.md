@@ -1,33 +1,33 @@
 ---
-name: imagn
-description: Generate or edit images with multi-model AI (OpenAI, Gemini Nano Banana). Use when the user says "generate an image", "create a picture", "make an image", "edit this photo", "change the background", or invokes /imagn.
+name: imagnx
+description: Generate or edit images with multi-model AI (OpenAI, Gemini Nano Banana). Use when the user says "generate an image", "create a picture", "make an image", "edit this photo", "change the background", or invokes /imagnx.
 when_to_use: Trigger on image generation or editing requests. Skip for metaphorical phrases ("paint a picture in your mind") or non-visual tasks.
 disable-model-invocation: false
-allowed-tools: Bash(command -v *) Bash(imagn *) Bash(npm install *) Bash(jq *)
+allowed-tools: Bash(command -v *) Bash(imagnx *) Bash(npm install *) Bash(jq *)
 compatibility: Requires Node.js ≥18 and either OPENAI_API_KEY or GEMINI_API_KEY in env.
 metadata:
   version: "0.1.0"
   repository: github.com/henriquerferrer/imagn
 ---
 
-# imagn
+# imagnx
 
-> **Side-effect notice:** This skill makes paid API calls (OpenAI, Gemini) and writes image files. It auto-fires on natural-language image requests. To restrict to manual `/imagn` invocation only, set `disable-model-invocation: true` in this skill's frontmatter.
+> **Side-effect notice:** This skill makes paid API calls (OpenAI, Gemini) and writes image files. It auto-fires on natural-language image requests. To restrict to manual `/imagnx` invocation only, set `disable-model-invocation: true` in this skill's frontmatter.
 
-Generate or edit images using the `imagn` CLI. The CLI dispatches to OpenAI (`gpt-image-1.5`, `gpt-image-2`) and Google (`gemini-2.5-flash-image` aka Nano Banana). See [reference.md](reference.md) for the full flag list, supported models, and exit codes.
+Generate or edit images using the `imagnx` CLI. The CLI dispatches to OpenAI (`gpt-image-1.5`, `gpt-image-2`) and Google (`gemini-2.5-flash-image` aka Nano Banana). See [reference.md](reference.md) for the full flag list, supported models, and exit codes.
 
 ## Step 1 — Pre-flight: install detection
 
 Before doing anything else, run:
 
 ```bash
-command -v imagn >/dev/null 2>&1 && imagn --version || echo "MISSING"
+command -v imagnx >/dev/null 2>&1 && imagnx --version || echo "MISSING"
 ```
 
 If the output is `MISSING`:
-1. Tell the user: "imagn is not installed. Installing now via `npm install -g github.com/henriquerferrer/imagn`."
+1. Tell the user: "imagnx is not installed. Installing now via `npm install -g github.com/henriquerferrer/imagn`."
 2. Run: `npm install -g github.com/henriquerferrer/imagn`
-3. Verify: `imagn --version`. If still missing, print: "Manual install: clone https://github.com/henriquerferrer/imagn and run `npm install -g .`" and stop.
+3. Verify: `imagnx --version`. If still missing, print: "Manual install: clone https://github.com/henriquerferrer/imagn and run `npm install -g .`" and stop.
 
 ## Step 2 — Parse the request
 
@@ -45,12 +45,12 @@ Always pass `--json` so output is parseable.
 
 **Generation:**
 ```bash
-imagn "<prompt>" --json [--compare] [-m <model>] [--open]
+imagnx "<prompt>" --json [--compare] [-m <model>] [--open]
 ```
 
 **Edit:**
 ```bash
-imagn edit <ref1> [<ref2> ...] "<prompt>" --json [--mask <m>] [-m <model>] [--open]
+imagnx edit <ref1> [<ref2> ...] "<prompt>" --json [--mask <m>] [-m <model>] [--open]
 ```
 
 Capture stdout. Parse with `jq` if needed.
@@ -75,25 +75,25 @@ From `{ "results": [...], "errors": [...] }`:
 
 **User:** "generate an image of a cat astronaut on the moon"
 ```bash
-imagn "a cat astronaut on the moon" --json
+imagnx "a cat astronaut on the moon" --json
 ```
 
 **User:** "make me an image showing a red car, and show it to me"
 ```bash
-imagn "a red car" --json --open
+imagnx "a red car" --json --open
 ```
 
 **User:** "compare a sunset across all the image models"
 ```bash
-imagn "a sunset over mountains" --compare --json
+imagnx "a sunset over mountains" --compare --json
 ```
 
 **User:** "edit /tmp/photo.png to make the sky purple"
 ```bash
-imagn edit /tmp/photo.png "make the sky purple" --json
+imagnx edit /tmp/photo.png "make the sky purple" --json
 ```
 
 **User:** "edit /tmp/photo.png with mask /tmp/sky.png — change the sky to stars"
 ```bash
-imagn edit /tmp/photo.png --mask /tmp/sky.png "stars in the sky" --json
+imagnx edit /tmp/photo.png --mask /tmp/sky.png "stars in the sky" --json
 ```

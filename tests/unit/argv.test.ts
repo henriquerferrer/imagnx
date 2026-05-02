@@ -48,7 +48,7 @@ describe("patchedRawArgs", () => {
   });
 
   it("treats prompts that look like subcommand names as flag values via shorthand", () => {
-    // `imagn "models are cool"` — quoted prompt that happens to start with a
+    // `imagnx "models are cool"` — quoted prompt that happens to start with a
     // known subcommand word. The whole string is a single argv entry.
     expect(patchedRawArgs(["models are cool"])).toEqual([
       "generate",
