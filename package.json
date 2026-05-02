@@ -10,7 +10,7 @@
   },
   "type": "module",
   "bin": {
-    "imagn": "./dist/cli.js"
+    "imagn": "dist/cli.js"
   },
   "files": [
     "dist",
