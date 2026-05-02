@@ -9,23 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.3] - 2026-05-02
 
-Metadata-only patch — no functional changes.
-
-### Changed
-
-- GitHub repository renamed `henriquerferrer/imagn` →
-  `henriquerferrer/imagnx`. `package.json#repository.url` updated so
-  the npm registry page links to the renamed repo.
-- README + skill/SKILL.md install URLs (`npm install -g
-  github.com/...`, raw `curl` URLs, `npx skills add` URL) point to the
-  new repo path.
-
-GitHub auto-redirects from the old repository URL, so existing
-clones, links, and `npm install -g github.com/henriquerferrer/imagn`
-invocations continue to work.
-
-## [0.1.2] - 2026-05-02
-
 ### Added
 
 - YAML config support. Drop a `~/.imagnx/config.yml` (or `.yaml`) using
@@ -46,6 +29,10 @@ invocations continue to work.
 - `resolveConfig` now takes `file: LoadedConfig | undefined` instead
   of `tomlText: string | undefined` so the format can be propagated
   from `loadConfigFile`.
+- GitHub repository renamed `henriquerferrer/imagn` →
+  `henriquerferrer/imagnx`. `package.json#repository.url` and the
+  install URLs in README + skill/SKILL.md updated. GitHub auto-redirects
+  the old URL so existing clones still work.
 
 ### Removed
 
