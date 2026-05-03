@@ -1,6 +1,6 @@
 # imagnx
 
-Multi-model image generation CLI. Supports OpenAI (`gpt-image-1.5`, `gpt-image-2`) and Google (`gemini-2.5-flash-image` aka Nano Banana).
+Multi-model image generation CLI. Supports OpenAI (`gpt-image-1.5`, `gpt-image-2`) and Google (`gemini-2.5-flash-image` aka Nano Banana, `gemini-3-pro-image-preview` aka Nano Banana Pro). Includes a dedicated icon mode with 16 style presets.
 
 ## Install
 
@@ -28,6 +28,48 @@ export IMAGNX_GEMINI_API_KEY=...
 
 Provider keys come from the `IMAGNX_`-prefixed env vars or `~/.imagnx/credentials.toml`.
 
+## Icon mode
+
+For app-icon-style outputs, use the dedicated subcommand. It wraps your prompt in multi-layer scaffolding (archetype selection, anti-padding rules, Android safe-area, blur QA) ported from [SnapAI](https://github.com/betomoedano/snapai) (MIT).
+
+```bash
+imagnx icon "weather app, sun and cloud"
+imagnx icon "fitness tracker" --style minimalism
+imagnx icon "calculator" --prompt-only        # preview the enhanced prompt
+imagnx icon "notes app" --raw-prompt          # bypass enhancement
+imagnx icon "banking app" --use-icon-words    # include "icon"/"logo" wording
+imagnx icon "music player" --model nano-banana-pro --quality 2k -n 3
+```
+
+Default model is `gpt-image-1.5`; default size is `1024x1024`.
+
+## Styles
+
+`--style <name>` applies a preset directive to the prompt. Some presets are universal; others are icon-only.
+
+| Preset | Applies to |
+|---|---|
+| `minimalism`, `flat`, `pixel`, `kawaii`, `neon`, `holographic`, `material` | generate / icon / edit |
+| `ios-classic`, `android-material`, `glassy`, `clay`, `woven`, `geometric`, `gradient`, `game`, `cute` | icon only |
+
+Selecting an icon-only preset on a non-icon command exits with code 4 and a clear message. You can also pass a free-form `--style "made of moss"` for a soft hint.
+
+### `imagnx icon` flags
+
+| Flag | Short | Default | Description |
+|---|---|---|---|
+| `<prompt>` |  | required | What the icon represents (positional) |
+| `--style` |  |  | Preset name or free-form hint |
+| `--prompt-only` |  | `false` | Print enhanced prompt; no API call |
+| `--raw-prompt` | `-r` | `false` | Skip enhancement; send prompt verbatim |
+| `--use-icon-words` | `-i` | `false` | Include "icon"/"logo" wording (default: off to reduce padding) |
+| `--model` | `-m` | `gpt-image-1.5` | Model ID |
+| `--quality` | `-q` |  | Model-aware: `auto/high/medium/low` (OpenAI) or `1k/2k/4k` (gemini-3-pro). Aliases: `hd`→`high`, `standard`→`medium` |
+| `--n` |  | `1` | Number of images |
+| `--output` | `-o` |  | Output file or directory override |
+| `--open` |  | `false` | Open results in default viewer |
+| `--json` |  | `false` | Emit structured JSON |
+
 ## Skill
 
 Install via [`npx skills`](https://github.com/vercel-labs/skills):
@@ -53,8 +95,9 @@ The skill auto-detects when the CLI is missing and installs it on first use.
 | OpenAI | `gpt-image-1.5` | ✓ | ✓ | up to 1536×1024 |
 | OpenAI | `gpt-image-2` | ✓ | ✓ | up to 3840×2160 |
 | Google | `gemini-2.5-flash-image` | ✓ | ✗ | auto |
+| Google | `gemini-3-pro-image-preview` | ✓ | ✗ | up to 1024×1024 (tiers: 1k/2k/4k) |
 
-`nano-banana` is an alias for `gemini-2.5-flash-image`. See [`skill/reference.md`](skill/reference.md) for the full flag list and exit codes.
+Aliases: `nano-banana` → `gemini-2.5-flash-image`, `nano-banana-pro` → `gemini-3-pro-image-preview`. See [`skill/reference.md`](skill/reference.md) for the full flag list and exit codes.
 
 ## Configuration
 

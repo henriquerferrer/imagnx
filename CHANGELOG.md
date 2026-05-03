@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-03
+
+### Added
+
+- `imagnx icon "<prompt>"` subcommand with multi-layer prompt enhancement (ported from [SnapAI](https://github.com/betomoedano/snapai), MIT).
+- `--style <name>` on `imagnx`, `imagnx icon`, and `imagnx edit`. 16 presets total: 7 universal (`minimalism`, `flat`, `pixel`, `kawaii`, `neon`, `holographic`, `material`) and 9 icon-only (`glassy`, `woven`, `geometric`, `gradient`, `ios-classic`, `android-material`, `clay`, `game`, `cute`). Subcommand-scoped allowlists; mismatches exit 4 with a clear message.
+- `--prompt-only`, `--raw-prompt` (`-r`), `--use-icon-words` (`-i`) flags on `imagnx icon`.
+- `gemini-3-pro-image-preview` model (alias `nano-banana-pro`) with quality tiers `1k`/`2k`/`4k` and multi-image support.
+- Quality aliases: `hd` → `high`, `standard` → `medium`.
+
+### Changed
+
+- Quality validation is now model-aware. Each model declares its valid `qualityValues`; mismatches exit with code 4 and a clear message naming the valid values.
+
 ## [0.1.7] - 2026-05-02
 
 ### Fixed
