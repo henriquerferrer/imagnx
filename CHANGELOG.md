@@ -7,13 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-04
+
 ### Removed
 
-- `--compare` flag. It always failed against the default `quality=high` (rejected by `gemini-2.5-flash-image`, which only accepts `auto`) and no single global `--quality` value worked across all models. Use comma-separated `-m` for multi-model fan-out instead: `imagnx "<prompt>" -m gpt-image-1.5,nano-banana`.
+- **BREAKING**: `--compare` flag. It always failed against the default `quality=high` (rejected by `gemini-2.5-flash-image`, which only accepts `auto`) and no single global `--quality` value worked across all four supported models. **Migration**: use comma-separated `-m` for multi-model fan-out, e.g. `imagnx "<prompt>" -m gpt-image-1.5,nano-banana -q auto`.
+
+### Added
+
+- `--size` on `imagnx icon` (defaults to `1024x1024`; override for non-square outputs).
+- 13 integration tests covering `generate`, `edit`, `models`, `config`, and the bare-prompt routing — running in an isolated `$HOME` so the user's real `~/.imagnx/` never bleeds in.
+
+### Fixed
+
+- SnapAI MIT attribution: full upstream copyright shipped in `LICENSES/SnapAI-MIT.txt`, with per-file pointers at the top of `src/prompt/styles.ts` and `src/prompt/icon-prompt.ts`.
+- `--style` validation cleanly rejects icon-only presets on `imagnx generate` / `imagnx edit` with exit 4 and a clear message.
+- README quick-start fan-out example (now passes `-q auto`, the only quality compatible with both `gpt-image-1.5` and `gemini-2.5-flash-image`).
+- skill/reference.md `--quality` and `--size` rows no longer contradict the per-model tables further down the same file.
+- skill/SKILL.md model list now mentions `gemini-3-pro-image-preview` / `nano-banana-pro` (was inconsistent with its own description).
+- README models table lists every supported preset per model (was silently dropping portrait orientations behind "up to 1536×1024").
+- `STRING_FLAGS` for the bare-prompt argv-patcher was missing `--openai` and `--gemini`. Auto-derived now.
 
 ### Changed
 
-- Internal CLI restructure: `cli.ts` split into `pipeline.ts` (shared resolution + execution) and per-command files under `src/commands/`. `styles.ts` and `icon-prompt.ts` moved under `src/prompt/`. No user-visible behavior change.
+- Internal CLI restructure: `cli.ts` split from 912 LOC into `pipeline.ts` (shared resolution + execution + exit-code wiring) and one file per subcommand under `src/commands/`. The icon command's circular-import workaround (a runtime monkey-patch on `iconCmd.run` from `cli.ts`) is gone. `styles.ts` and `icon-prompt.ts` moved under `src/prompt/`. No user-visible behavior change.
+- The registered subcommand set and `STRING_FLAGS` now have a single source of truth in `src/commands/index.ts`. Adding a subcommand or a new string flag is a one-line change instead of a "remember-to-update-three-places" footgun.
+- `--debug` detection consolidated into `pipeline.ts:isDebugEnabled()` so the flag declaration in `sharedArgs` and the `process.argv` scan can no longer drift.
+- Dropped `bun.lock` and `bunfig.toml` — the project uses npm (per the existing `package-lock.json` and the npm-shaped `package.json` scripts), and bun was never actually used.
 
 ## [0.2.0] - 2026-05-03
 

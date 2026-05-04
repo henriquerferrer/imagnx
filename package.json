@@ -1,6 +1,6 @@
 {
   "name": "imagnx",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Multi-model image generation CLI",
   "license": "MIT",
   "author": "Henrique Ferrer",
@@ -15,6 +15,7 @@
   "files": [
     "dist",
     "LICENSE",
+    "LICENSES",
     "CHANGELOG.md",
     "README.md"
   ],

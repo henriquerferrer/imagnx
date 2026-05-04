@@ -4,7 +4,7 @@ description: Generate or edit images using the imagnx CLI (OpenAI gpt-image, Goo
 disable-model-invocation: false
 allowed-tools: Bash(command -v *) Bash(imagnx *) Bash(npm install *) Bash(jq *)
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
   repository: github.com/henriquerferrer/imagnx
 ---
 
