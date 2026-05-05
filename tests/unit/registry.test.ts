@@ -104,3 +104,12 @@ describe("registry", () => {
     expect(providerForModel("nano-banana")).toBe("google");
   });
 });
+
+describe("registry invariants", () => {
+  it("every model's defaultQuality is contained in its qualityValues", () => {
+    for (const modelId of KNOWN_MODELS) {
+      const c = modelCapabilities(modelId);
+      expect(c.qualityValues).toContain(c.defaultQuality);
+    }
+  });
+});

@@ -250,7 +250,7 @@ gemini_api_key: g-yaml
   });
 
   it("VALID_QUALITIES is the canonical set", () => {
-    expect(VALID_QUALITIES).toEqual(["low", "medium", "high", "auto"]);
+    expect(VALID_QUALITIES).toEqual(["low", "medium", "high", "auto", "1k", "2k", "4k"]);
   });
 
   it("VALID_SIZES contains all model presets, including gpt-image-2's", () => {

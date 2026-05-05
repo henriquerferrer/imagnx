@@ -8,6 +8,7 @@ export interface ModelCapabilities {
   supportsMask: boolean;
   validSizes: ReadonlyArray<Size>;
   defaultQuality: Quality;
+  qualityValues: ReadonlyArray<Quality>;
   maxRefImages: number;
   enabled?: boolean;
 }
@@ -20,6 +21,7 @@ const CAPABILITIES: Record<string, ModelCapabilities> = {
     supportsMask: true,
     validSizes: ["auto", "1024x1024", "1536x1024", "1024x1536"],
     defaultQuality: "high",
+    qualityValues: ["low", "medium", "high", "auto"],
     maxRefImages: 16,
   },
   "gpt-image-2": {
@@ -40,6 +42,7 @@ const CAPABILITIES: Record<string, ModelCapabilities> = {
       "2160x3840",
     ],
     defaultQuality: "high",
+    qualityValues: ["low", "medium", "high", "auto"],
     maxRefImages: 16,
   },
   "dall-e-3": {
@@ -50,6 +53,7 @@ const CAPABILITIES: Record<string, ModelCapabilities> = {
     supportsMask: false,
     validSizes: ["1024x1024", "1792x1024", "1024x1792"],
     defaultQuality: "auto",
+    qualityValues: ["auto"], // placeholder; entry is disabled
     maxRefImages: 0,
     enabled: false,
   },
@@ -60,12 +64,24 @@ const CAPABILITIES: Record<string, ModelCapabilities> = {
     supportsMask: false,
     validSizes: ["auto"],
     defaultQuality: "auto",
+    qualityValues: ["auto"],
+    maxRefImages: 8,
+  },
+  "gemini-3-pro-image-preview": {
+    modelId: "gemini-3-pro-image-preview",
+    providerId: "google",
+    supportsEdit: true,
+    supportsMask: false,
+    validSizes: ["auto", "1024x1024"],
+    defaultQuality: "1k",
+    qualityValues: ["1k", "2k", "4k"],
     maxRefImages: 8,
   },
 };
 
 const ALIASES: Record<string, string> = {
   "nano-banana": "gemini-2.5-flash-image",
+  "nano-banana-pro": "gemini-3-pro-image-preview",
 };
 
 export function resolveModelId(input: string): string {
@@ -100,8 +116,8 @@ export function listModels(): Record<string, string[]> {
 }
 
 export type ValidationRequest =
-  | { kind: "generate"; size?: Size }
-  | { kind: "edit"; refCount: number; size?: Size; hasMask?: boolean };
+  | { kind: "generate"; size?: Size; quality?: Quality }
+  | { kind: "edit"; refCount: number; size?: Size; hasMask?: boolean; quality?: Quality };
 
 export function validateRequest(
   modelId: string,
@@ -129,6 +145,12 @@ export function validateRequest(
   if (req.size && req.size !== "auto" && !cap.validSizes.includes(req.size)) {
     throw new InvalidArgs(
       `Model "${modelId}" does not support size "${req.size}". Valid: ${cap.validSizes.join(", ")}`,
+    );
+  }
+
+  if (req.quality !== undefined && !cap.qualityValues.includes(req.quality)) {
+    throw new InvalidArgs(
+      `'${req.quality}' not valid for ${modelId}; valid: ${cap.qualityValues.join(", ")}`,
     );
   }
 }

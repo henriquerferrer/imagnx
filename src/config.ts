@@ -31,7 +31,9 @@ export interface ConfigOverrides {
   openAfter?: boolean;
 }
 
-export const VALID_QUALITIES: ReadonlyArray<Quality> = ["low", "medium", "high", "auto"];
+export const VALID_QUALITIES: ReadonlyArray<Quality> = [
+  "low", "medium", "high", "auto", "1k", "2k", "4k",
+];
 // Union of presets accepted by any supported model. Per-model validity is
 // narrowed by registry.validateRequest; this is just the "is this a known
 // preset string" gate at the CLI boundary.

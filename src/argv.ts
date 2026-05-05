@@ -19,6 +19,7 @@
 export const KNOWN_SUBCOMMANDS = new Set([
   "generate",
   "edit",
+  "icon",
   "models",
   "init",
   "login",
@@ -32,6 +33,7 @@ export const STRING_FLAGS = new Set([
   "--n",
   "-o", "--output",
   "--mask",
+  "--style",
 ]);
 
 export function patchedRawArgs(argv: string[]): string[] {

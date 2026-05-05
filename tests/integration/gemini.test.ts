@@ -125,3 +125,61 @@ describe("gemini provider", () => {
     expect((caught as ProviderError).message).toMatch(/missing/i);
   });
 });
+
+describe("gemini-3-pro-image-preview", () => {
+  let restore: (() => void) | undefined;
+  afterEach(() => {
+    restore?.();
+    restore = undefined;
+  });
+
+  const baseFixture = {
+    url: "",
+    responseBody: JSON.stringify({
+      candidates: [{
+        content: {
+          parts: [{ inlineData: { mimeType: "image/png", data: "iVBORw0KGgo=" } }],
+        },
+      }],
+    }),
+    responseStatus: 200,
+    responseHeaders: { "content-type": "application/json" },
+  };
+
+  it("calls the pro model endpoint and forwards the quality tier as imageSize=2K", async () => {
+    const mock = installFetchMock([baseFixture]);
+    restore = mock.restore;
+    const provider = createGeminiProvider({ apiKey: "g-test" });
+    await provider.generate("gemini-3-pro-image-preview", {
+      prompt: "icon test",
+      quality: "2k",
+    });
+    expect(mock.calls[0]!.url).toContain("/models/gemini-3-pro-image-preview:generateContent");
+    const body = JSON.parse(String(mock.calls[0]!.init!.body)) as {
+      generationConfig: { imageConfig?: { imageSize?: string } };
+    };
+    expect(body.generationConfig.imageConfig?.imageSize).toBe("2K");
+  });
+
+  it("defaults to 1K when no quality given", async () => {
+    const mock = installFetchMock([baseFixture]);
+    restore = mock.restore;
+    const provider = createGeminiProvider({ apiKey: "g-test" });
+    await provider.generate("gemini-3-pro-image-preview", { prompt: "icon test" });
+    const body = JSON.parse(String(mock.calls[0]!.init!.body)) as {
+      generationConfig: { imageConfig?: { imageSize?: string } };
+    };
+    expect(body.generationConfig.imageConfig?.imageSize).toBe("1K");
+  });
+
+  it("does not add imageConfig when calling gemini-2.5-flash-image", async () => {
+    const mock = installFetchMock([baseFixture]);
+    restore = mock.restore;
+    const provider = createGeminiProvider({ apiKey: "g-test" });
+    await provider.generate("gemini-2.5-flash-image", { prompt: "x", quality: "auto" });
+    const body = JSON.parse(String(mock.calls[0]!.init!.body)) as {
+      generationConfig: { imageConfig?: unknown };
+    };
+    expect(body.generationConfig.imageConfig).toBeUndefined();
+  });
+});

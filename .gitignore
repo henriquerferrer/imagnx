@@ -4,3 +4,4 @@ dist/
 .env
 .env.local
 tests/integration/fixtures/.recording/
+.worktrees/

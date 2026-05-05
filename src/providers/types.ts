@@ -8,7 +8,10 @@ export type Size =
   | "3840x2160"
   | "2160x3840"
   | (string & {}); // allow provider-specific custom sizes
-export type Quality = "low" | "medium" | "high" | "auto";
+// Union of every value any model accepts. Per-model validity is enforced by
+// ModelCapabilities.qualityValues in registry.validateRequest, not at this
+// type level — keeps call sites provider-agnostic.
+export type Quality = "low" | "medium" | "high" | "auto" | "1k" | "2k" | "4k";
 
 export interface GenerateInput {
   prompt: string;

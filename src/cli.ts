@@ -43,6 +43,8 @@ import { createOpenAIProvider } from "./providers/openai.js";
 import { createGeminiProvider } from "./providers/gemini.js";
 import type { Provider, Quality, Size } from "./providers/types.js";
 import { patchedRawArgs } from "./argv.js";
+import { validateStyleForCommand, getStyleDirective } from "./styles.js";
+import { iconCmd, buildIconRequest, type IconOpts } from "./commands/icon.js";
 
 // ---------------------------------------------------------------------------
 // Option shapes (citty → run* funcs)
@@ -58,6 +60,7 @@ interface SharedGenerateOpts {
   open?: boolean;
   json?: boolean;
   dryRun?: boolean;
+  style?: string;
 }
 
 interface EditOpts extends SharedGenerateOpts {
@@ -99,10 +102,12 @@ function narrowSizeFlag(raw: string | undefined): Size | undefined {
 
 function narrowQualityFlag(raw: string | undefined): Quality | undefined {
   if (raw === undefined) return undefined;
-  const v = narrowEnum(raw, VALID_QUALITIES);
+  // Aliases (DALL-E vocabulary some users still type)
+  const aliased = raw === "hd" ? "high" : raw === "standard" ? "medium" : raw;
+  const v = narrowEnum(aliased, VALID_QUALITIES);
   if (v === undefined) {
     throw new InvalidArgs(
-      `--quality "${raw}" is not valid. Valid: ${VALID_QUALITIES.join(", ")}`,
+      `--quality "${raw}" is not a known value. Valid: ${VALID_QUALITIES.join(", ")}`,
     );
   }
   return v;
@@ -215,18 +220,21 @@ async function executeAndOutput(
 // ---------------------------------------------------------------------------
 
 async function runGenerate(opts: SharedGenerateOpts): Promise<void> {
-  const { cfg, modelIds, size, quality, n, providers } = resolveShared(
-    opts,
-    process.env,
-  );
+  let effectivePrompt = opts.prompt;
+  if (opts.style !== undefined) {
+    const id = validateStyleForCommand(opts.style, "generate");
+    effectivePrompt = `Style directive: ${getStyleDirective(id)}\n\n${opts.prompt}`;
+  }
+
+  const { cfg, modelIds, size, quality, n, providers } = resolveShared(opts, process.env);
 
   for (const modelId of modelIds) {
-    validateRequest(modelId, { kind: "generate", size });
+    validateRequest(modelId, { kind: "generate", size, quality });
   }
 
   if (opts.dryRun) {
     process.stderr.write(
-      `[dry-run] kind=generate models=${modelIds.join(",")} prompt=${opts.prompt}\n`,
+      `[dry-run] kind=generate models=${modelIds.join(",")} prompt=${effectivePrompt}\n`,
     );
     return;
   }
@@ -234,9 +242,9 @@ async function runGenerate(opts: SharedGenerateOpts): Promise<void> {
   const req: RunRequest = {
     kind: "generate",
     modelIds,
-    input: { prompt: opts.prompt, size, quality, n },
+    input: { prompt: effectivePrompt, size, quality, n },
   };
-  await executeAndOutput(req, cfg, providers, opts);
+  await executeAndOutput(req, cfg, providers, { ...opts, prompt: effectivePrompt });
 }
 
 async function runEdit(opts: EditOpts): Promise<void> {
@@ -245,6 +253,12 @@ async function runEdit(opts: EditOpts): Promise<void> {
   }
   if (!opts.prompt) {
     throw new InvalidArgs("edit requires a prompt (last positional argument)");
+  }
+
+  let effectivePrompt = opts.prompt;
+  if (opts.style !== undefined) {
+    const id = validateStyleForCommand(opts.style, "edit");
+    effectivePrompt = `Style directive: ${getStyleDirective(id)}\n\n${opts.prompt}`;
   }
 
   const MAX_REF_BYTES = 25 * 1024 * 1024; // 25 MB
@@ -275,12 +289,13 @@ async function runEdit(opts: EditOpts): Promise<void> {
       refCount: refImages.length,
       size,
       hasMask: !!mask,
+      quality,
     });
   }
 
   if (opts.dryRun) {
     process.stderr.write(
-      `[dry-run] kind=edit models=${modelIds.join(",")} refs=${opts.refs.join(",")} prompt=${opts.prompt}\n`,
+      `[dry-run] kind=edit models=${modelIds.join(",")} refs=${opts.refs.join(",")} prompt=${effectivePrompt}\n`,
     );
     return;
   }
@@ -288,9 +303,50 @@ async function runEdit(opts: EditOpts): Promise<void> {
   const req: RunRequest = {
     kind: "edit",
     modelIds,
-    input: { prompt: opts.prompt, size, quality, n, refImages, mask },
+    input: { prompt: effectivePrompt, size, quality, n, refImages, mask },
   };
-  await executeAndOutput(req, cfg, providers, opts);
+  await executeAndOutput(req, cfg, providers, { ...opts, prompt: effectivePrompt });
+}
+
+// ---------------------------------------------------------------------------
+// icon entry point
+// ---------------------------------------------------------------------------
+
+async function runIcon(opts: IconOpts & SharedGenerateOpts): Promise<void> {
+  const built = buildIconRequest({
+    prompt: opts.prompt,
+    style: opts.style,
+    promptOnly: opts.promptOnly,
+    rawPrompt: opts.rawPrompt,
+    useIconWords: opts.useIconWords,
+  });
+
+  if (built.printOnly) {
+    process.stdout.write(built.enhancedPrompt + "\n");
+    return;
+  }
+
+  // Default size for icon mode is 1024x1024 (override possible via --size).
+  const sizedOpts: SharedGenerateOpts = { ...opts, size: opts.size ?? "1024x1024" };
+  const { cfg, modelIds, size, quality, n, providers } = resolveShared(sizedOpts, process.env);
+
+  for (const modelId of modelIds) {
+    validateRequest(modelId, { kind: "generate", size, quality });
+  }
+
+  if (opts.dryRun) {
+    process.stderr.write(
+      `[dry-run] kind=icon models=${modelIds.join(",")} prompt=${built.enhancedPrompt.slice(0, 80)}...\n`,
+    );
+    return;
+  }
+
+  const req: RunRequest = {
+    kind: "generate",
+    modelIds,
+    input: { prompt: built.enhancedPrompt, size, quality, n },
+  };
+  await executeAndOutput(req, cfg, providers, { ...opts, prompt: built.enhancedPrompt });
 }
 
 // ---------------------------------------------------------------------------
@@ -349,6 +405,10 @@ const sharedArgs = {
     type: "string" as const,
     alias: "q",
     description: "Image quality (low, medium, high, auto)",
+  },
+  style: {
+    type: "string" as const,
+    description: "Style preset (e.g. minimalism, pixel, neon) — applies a directive to the prompt",
   },
   n: {
     type: "string" as const,
@@ -448,6 +508,7 @@ const generateCmd = defineCommand({
         open: args.open,
         json: args.json,
         dryRun: args["dry-run"],
+        style: args.style,
       }),
     );
   },
@@ -494,6 +555,7 @@ const editCmd = defineCommand({
         open: args.open,
         json: args.json,
         dryRun: args["dry-run"],
+        style: args.style,
       });
     });
   },
@@ -773,6 +835,7 @@ const main = defineCommand({
   subCommands: {
     generate: generateCmd,
     edit: editCmd,
+    icon: iconCmd,
     models: modelsCmd,
     init: initCmd,
     login: loginCmd,
@@ -784,6 +847,7 @@ const main = defineCommand({
       const subCommandNames = [
         "generate",
         "edit",
+        "icon",
         "models",
         "init",
         "login",
@@ -810,6 +874,7 @@ const main = defineCommand({
         open: args.open,
         json: args.json,
         dryRun: args["dry-run"],
+        style: args.style,
       });
     });
   },
@@ -818,6 +883,25 @@ const main = defineCommand({
 // ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
+
+(iconCmd as { run?: unknown }).run = ({ args }: { args: Record<string, unknown> }) =>
+  withExitCode(() =>
+    runIcon({
+      prompt: String(args.prompt),
+      style: args.style as string | undefined,
+      promptOnly: args["prompt-only"] === true,
+      rawPrompt: args["raw-prompt"] === true,
+      useIconWords: args["use-icon-words"] === true,
+      model: args.model as string | undefined,
+      compare: false,
+      quality: args.quality as string | undefined,
+      n: parseN(args.n as string | undefined),
+      output: args.output as string | undefined,
+      open: args.open === true,
+      json: args.json === true,
+      dryRun: false,
+    }),
+  );
 
 try {
   const rawArgs = patchedRawArgs(process.argv.slice(2));

@@ -15,6 +15,20 @@ export interface GeminiProviderOptions {
   baseUrl?: string;
 }
 
+const PRO_MODEL = "gemini-3-pro-image-preview";
+
+function isPro(modelId: string): boolean {
+  return modelId === PRO_MODEL;
+}
+
+// SnapAI's wire format (src/services/gemini.ts): generationConfig.imageConfig.imageSize
+// expects uppercase tier strings. Default to "1K" when no quality given.
+function imageConfigFor(modelId: string, quality?: string): Record<string, unknown> | undefined {
+  if (!isPro(modelId)) return undefined;
+  const tier = quality && ["1k", "2k", "4k"].includes(quality) ? quality : "1k";
+  return { imageConfig: { imageSize: tier.toUpperCase() } };
+}
+
 export function createGeminiProvider(opts: GeminiProviderOptions): Provider {
   const baseUrl = opts.baseUrl ?? BASE;
 
@@ -22,11 +36,16 @@ export function createGeminiProvider(opts: GeminiProviderOptions): Provider {
     modelId: string,
     parts: Array<Record<string, unknown>>,
     promptForResult: string,
+    extraConfig?: Record<string, unknown>,
   ): Promise<ImageResult[]> {
     const url = `${baseUrl}/models/${modelId}:generateContent`;
+    const generationConfig = {
+      responseModalities: ["IMAGE"],
+      ...(extraConfig ?? {}),
+    };
     const body = {
       contents: [{ parts }],
-      generationConfig: { responseModalities: ["IMAGE"] },
+      generationConfig,
     };
 
     const timeoutMs = Number(process.env.IMAGNX_REQUEST_TIMEOUT_MS) || 120_000;
@@ -101,9 +120,14 @@ export function createGeminiProvider(opts: GeminiProviderOptions): Provider {
 
   return {
     id: "google",
-    models: ["gemini-2.5-flash-image"],
+    models: ["gemini-2.5-flash-image", "gemini-3-pro-image-preview"],
     async generate(modelId, input: GenerateInput) {
-      return call(modelId, [{ text: input.prompt }], input.prompt);
+      return call(
+        modelId,
+        [{ text: input.prompt }],
+        input.prompt,
+        imageConfigFor(modelId, input.quality),
+      );
     },
     async edit(modelId, input: EditInput) {
       const parts: Array<Record<string, unknown>> = [];
@@ -116,7 +140,7 @@ export function createGeminiProvider(opts: GeminiProviderOptions): Provider {
         });
       }
       parts.push({ text: input.prompt });
-      return call(modelId, parts, input.prompt);
+      return call(modelId, parts, input.prompt, imageConfigFor(modelId, input.quality));
     },
   };
 }
