@@ -1,5 +1,7 @@
 # imagnx reference
 
+> Invocation: prefer `npx --yes imagnx@latest <args>` (no install, always current). The unprefixed `imagnx <args>` form below is shorthand and assumes a global install (`npm install -g imagnx`); both forms accept the same flags.
+
 ## Commands
 
 - `imagnx "<prompt>" [flags]`: generation shorthand.
