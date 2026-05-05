@@ -152,6 +152,16 @@ export const iconCmd = defineCommand({
       description: "Stable JSON output: {results:[...],errors:[...]}",
       default: false,
     },
+    "openai-api-key": {
+      type: "string" as const,
+      description:
+        "OpenAI API key (one-shot; overrides IMAGNX_OPENAI_API_KEY and credentials.toml; not persisted)",
+    },
+    "gemini-api-key": {
+      type: "string" as const,
+      description:
+        "Gemini API key (one-shot; overrides IMAGNX_GEMINI_API_KEY and credentials.toml; not persisted)",
+    },
   },
   run({ args }) {
     return withExitCode(() =>
@@ -169,6 +179,8 @@ export const iconCmd = defineCommand({
         open: args.open === true,
         json: args.json === true,
         dryRun: false,
+        openaiApiKey: args["openai-api-key"] as string | undefined,
+        geminiApiKey: args["gemini-api-key"] as string | undefined,
       }),
     );
   },

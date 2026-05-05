@@ -26,6 +26,16 @@ export const sharedArgs = {
     description:
       "Style preset (e.g. minimalism, pixel, neon) — applies a directive to the prompt",
   },
+  "openai-api-key": {
+    type: "string" as const,
+    description:
+      "OpenAI API key (one-shot; overrides IMAGNX_OPENAI_API_KEY and credentials.toml; not persisted)",
+  },
+  "gemini-api-key": {
+    type: "string" as const,
+    description:
+      "Gemini API key (one-shot; overrides IMAGNX_GEMINI_API_KEY and credentials.toml; not persisted)",
+  },
   n: {
     type: "string" as const,
     description: "Number of images to generate (positive integer)",
@@ -84,6 +94,8 @@ export function sharedOptsFromArgs(args: {
   json?: boolean;
   "dry-run"?: boolean;
   style?: string;
+  "openai-api-key"?: string;
+  "gemini-api-key"?: string;
 }): SharedGenerateOpts {
   return {
     prompt: args.prompt,
@@ -96,5 +108,7 @@ export function sharedOptsFromArgs(args: {
     json: args.json,
     dryRun: args["dry-run"],
     style: args.style,
+    openaiApiKey: args["openai-api-key"],
+    geminiApiKey: args["gemini-api-key"],
   };
 }

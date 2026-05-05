@@ -4,7 +4,7 @@ description: Generate or edit images using the imagnx CLI (OpenAI gpt-image, Goo
 disable-model-invocation: false
 allowed-tools: Bash(npx --yes imagnx*) Bash(jq *)
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
   repository: github.com/henriquerferrer/imagnx
 ---
 
@@ -69,7 +69,7 @@ Output is `{"results": [...], "errors": [...]}`. Print each result as `✓ <mode
 
 | Exit | Action |
 |---|---|
-| 2 (`MissingApiKey`) | The error names exactly which env var is missing — `IMAGNX_OPENAI_API_KEY` or `IMAGNX_GEMINI_API_KEY`. Ask the user **only for that one key** (do not ask for both unless both are missing). Save it with `npx --yes imagnx@latest login --openai <key>` (or `--gemini <key>`) — writes `~/.imagnx/credentials.toml` mode 600. Then retry the original call. The unprefixed `OPENAI_API_KEY` / `GEMINI_API_KEY` env vars are not read. |
+| 2 (`MissingApiKey`) | The error names exactly which env var is missing — `IMAGNX_OPENAI_API_KEY` or `IMAGNX_GEMINI_API_KEY`. Ask the user **only for that one key** (do not ask for both unless both are missing). Then either (a) **persist it** via `npx --yes imagnx@latest login --openai <key>` (or `--gemini <key>`) — writes `~/.imagnx/credentials.toml` mode 600 — and retry the original call without flags; or (b) **pass it inline** on the same call: `--openai-api-key <key>` (or `--gemini-api-key <key>`). Inline is one-shot (not persisted) and overrides env + credentials.toml; persist (a) is preferred if the user is likely to run more imagnx commands later. The unprefixed `OPENAI_API_KEY` / `GEMINI_API_KEY` env vars are not read. |
 | 3 (`UnsupportedFeature`) | Re-run with a model that supports the feature; the message names valid models. |
 | 4 (`InvalidArgs`) | Surface the validation error verbatim. Ask the user to correct flags or arguments. |
 | 5 (`RateLimited`) | Wait 30 to 60 seconds, then retry the same command. |
@@ -109,8 +109,12 @@ User: "make me an app icon for a weather app, minimalist"
 npx --yes imagnx@latest icon "weather app" --style minimalism --json
 ```
 
-User asks to generate but `IMAGNX_OPENAI_API_KEY` is missing (exit 2). Ask only for the OpenAI key, then:
+User asks to generate but `IMAGNX_OPENAI_API_KEY` is missing (exit 2). Ask only for the OpenAI key, then either persist (preferred — works for future calls too):
 ```bash
 npx --yes imagnx@latest login --openai sk-...
 npx --yes imagnx@latest "<original prompt>" --json
+```
+or pass it inline (one-shot, not persisted):
+```bash
+npx --yes imagnx@latest "<original prompt>" --openai-api-key sk-... --json
 ```

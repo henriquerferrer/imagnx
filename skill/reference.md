@@ -27,6 +27,8 @@
 | `--json` | bool | Stable JSON output: `{"results":[...],"errors":[...]}`. |
 | `--dry-run` | bool | Validate, don't call APIs. |
 | `--style <name>` | string | Style preset (`minimalism`, `pixel`, etc.) or free-form hint. Icon-only presets rejected on `generate`/`edit` (exit 4). |
+| `--openai-api-key <key>` | string | One-shot OpenAI key (overrides `IMAGNX_OPENAI_API_KEY` and `credentials.toml`; not persisted). |
+| `--gemini-api-key <key>` | string | One-shot Gemini key (overrides `IMAGNX_GEMINI_API_KEY` / `IMAGNX_GOOGLE_API_KEY` and `credentials.toml`; not persisted). |
 | `--debug` | bool | Verbose logs. |
 
 ## Supported models

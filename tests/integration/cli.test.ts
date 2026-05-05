@@ -9,7 +9,7 @@
 // directly bypass exactly the layer we want to verify.
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -117,6 +117,40 @@ describe("imagnx generate", () => {
     expect(r.code).toBe(4);
     expect(r.stderr).toContain("not a known preset");
   });
+
+  it("--openai-api-key flag works without IMAGNX_OPENAI_API_KEY env", () => {
+    // Cleared env + isolated $HOME → no env, no credentials file. The flag is
+    // the only key source. If runGenerate succeeds, the override is wired.
+    const r = runCli(
+      ["generate", "blue circle", "--openai-api-key", "sk-flag-only", "--dry-run"],
+      { IMAGNX_OPENAI_API_KEY: "", IMAGNX_GEMINI_API_KEY: "" },
+    );
+    expect(r.code).toBe(0);
+    expect(r.stderr).toContain("[dry-run] kind=generate models=gpt-image-1.5");
+  });
+
+  it("--gemini-api-key flag works without IMAGNX_GEMINI_API_KEY env", () => {
+    const r = runCli(
+      [
+        "generate", "blue circle",
+        "-m", "nano-banana", "-q", "auto",
+        "--gemini-api-key", "g-flag-only",
+        "--dry-run",
+      ],
+      { IMAGNX_OPENAI_API_KEY: "", IMAGNX_GEMINI_API_KEY: "" },
+    );
+    expect(r.code).toBe(0);
+    expect(r.stderr).toContain("models=gemini-2.5-flash-image");
+  });
+
+  it("missing key still surfaces exit 2 when neither flag nor env is set", () => {
+    const r = runCli(
+      ["generate", "blue circle", "--dry-run"],
+      { IMAGNX_OPENAI_API_KEY: "", IMAGNX_GEMINI_API_KEY: "" },
+    );
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("IMAGNX_OPENAI_API_KEY is not set");
+  });
 });
 
 describe("imagnx edit", () => {
@@ -133,6 +167,23 @@ describe("imagnx edit", () => {
     ]);
     expect(r.code).toBe(4);
     expect(r.stderr).toContain("Reference image not found");
+  });
+
+  it("--openai-api-key flag works without env", () => {
+    // edit needs a real ref file to validate; a 1-byte file is enough for
+    // dry-run (validateLocalImage just checks existence + size).
+    const tmpRef = `${isolatedHome}/ref.png`;
+    writeFileSync(tmpRef, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    const r = runCli(
+      [
+        "edit", tmpRef, "make it pink",
+        "--openai-api-key", "sk-flag-only",
+        "--dry-run",
+      ],
+      { IMAGNX_OPENAI_API_KEY: "", IMAGNX_GEMINI_API_KEY: "" },
+    );
+    expect(r.code).toBe(0);
+    expect(r.stderr).toContain("[dry-run] kind=edit");
   });
 });
 

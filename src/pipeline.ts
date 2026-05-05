@@ -44,6 +44,11 @@ export interface SharedGenerateOpts {
   json?: boolean;
   dryRun?: boolean;
   style?: string;
+  // One-shot per-call key overrides. Highest priority — beat env vars and
+  // credentials.toml. Useful for agent contexts where the user just typed
+  // the key in chat and persisting it on disk isn't wanted.
+  openaiApiKey?: string;
+  geminiApiKey?: string;
 }
 
 export interface ResolvedShared {
@@ -137,7 +142,10 @@ export function resolveShared(
   const neededProviders = new Set(modelIds.map((m) => providerForModel(m)));
   const providers: Record<string, Provider> = {};
   for (const pid of neededProviders) {
-    const key = apiKeyFor(pid, env, creds);
+    // Per-call flag wins over env / credentials.toml (apiKeyFor handles those).
+    const flagKey =
+      pid === "openai" ? opts.openaiApiKey : opts.geminiApiKey;
+    const key = flagKey || apiKeyFor(pid, env, creds);
     providers[pid] =
       pid === "openai"
         ? createOpenAIProvider({ apiKey: key })

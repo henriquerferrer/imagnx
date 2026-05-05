@@ -116,6 +116,8 @@ export const editCmd = defineCommand({
         json: args.json,
         dryRun: args["dry-run"],
         style: args.style,
+        openaiApiKey: args["openai-api-key"],
+        geminiApiKey: args["gemini-api-key"],
       });
     });
   },
