@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildFinalIconPrompt } from "../../src/icon-prompt.js";
+import { buildFinalIconPrompt } from "../../src/prompt/icon-prompt.js";
 
 describe("buildFinalIconPrompt", () => {
   it("plain prompt: includes subject, base context, technical constraints", () => {

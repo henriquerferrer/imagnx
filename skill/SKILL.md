@@ -1,6 +1,6 @@
 ---
 name: imagnx
-description: Generate or edit images using the imagnx CLI (OpenAI gpt-image, Google Gemini "Nano Banana"), or generate app-icon-style outputs via `imagnx icon` with 16 style presets. Use whenever the user wants to create or modify an image. Triggers include "generate", "create", "make", "draw", "render", "paint", "design", "illustrate", "picture", "logo", "icon", "app icon", "thumbnail", "sketch", "art", and edit phrasings like "edit this photo", "remove the background", "change the sky", "swap the X", "make it more X". Also use when the user names an image model (gpt-image-1.5, gpt-image-2, nano-banana, nano-banana-pro, gemini-2.5-flash-image, gemini-3-pro-image-preview), names a style preset (minimalism, glassy, pixel, kawaii, neon, etc.), asks to "compare image models", or invokes /imagnx. SKIP when the user wants to describe, analyze, OCR, or extract text from an image (vision, not generation), or wants charts, plots, or data visualizations.
+description: Generate or edit images using the imagnx CLI (OpenAI gpt-image, Google Gemini "Nano Banana"), or generate app-icon-style outputs via `imagnx icon` with 16 style presets. Use whenever the user wants to create or modify an image. Triggers include "generate", "create", "make", "draw", "render", "paint", "design", "illustrate", "picture", "logo", "icon", "app icon", "thumbnail", "sketch", "art", and edit phrasings like "edit this photo", "remove the background", "change the sky", "swap the X", "make it more X". Also use when the user names an image model (gpt-image-1.5, gpt-image-2, nano-banana, nano-banana-pro, gemini-2.5-flash-image, gemini-3-pro-image-preview), names a style preset (minimalism, glassy, pixel, kawaii, neon, etc.), or invokes /imagnx. SKIP when the user wants to describe, analyze, OCR, or extract text from an image (vision, not generation), or wants charts, plots, or data visualizations.
 disable-model-invocation: false
 allowed-tools: Bash(command -v *) Bash(imagnx *) Bash(npm install *) Bash(jq *)
 metadata:
@@ -10,17 +10,17 @@ metadata:
 
 # imagnx
 
-Generate or edit images via the `imagnx` CLI. Dispatches to OpenAI (`gpt-image-1.5`, `gpt-image-2`) and Google (`gemini-2.5-flash-image`, alias `nano-banana`). Full flag list, supported models, and exit codes: [reference.md](reference.md).
+Generate or edit images via the `imagnx` CLI. Dispatches to OpenAI (`gpt-image-1.5`, `gpt-image-2`) and Google (`gemini-2.5-flash-image` alias `nano-banana`, `gemini-3-pro-image-preview` alias `nano-banana-pro`). Full flag list, supported models, and exit codes: [reference.md](reference.md).
 
 ## Generate
 
 Always pass `--json` so the output is parseable.
 
 ```bash
-imagnx "<prompt>" --json [--compare] [-m <model>] [--open]
+imagnx "<prompt>" --json [-m <model>[,<model>...]] [--open]
 ```
 
-`--compare` fans out across all configured providers. `--open` opens results in the default viewer after writing.
+Pass a comma-separated `-m` list (e.g. `-m gpt-image-1.5,nano-banana`) to fan out across multiple models. When the chosen models have different valid `--quality` values, pass `-q auto` (the only setting all OpenAI + Gemini-flash models accept). `--open` opens results in the default viewer after writing.
 
 ## Edit
 
@@ -48,8 +48,7 @@ Extract:
 - **prompt**: required, the user's textual description as a single quoted string.
 - **refs**: file paths the user mentioned. Use absolute paths.
 - **mask**: a path mentioned alongside the word "mask".
-- **model**: if the user named one (`gpt-image-1.5`, `nano-banana`, etc.).
-- **compare**: set when the user says "compare", "all models", "side by side".
+- **model**: if the user named one (`gpt-image-1.5`, `nano-banana`, etc.). For "compare", "all models", "side by side", pass a comma-separated `-m` list.
 - **open**: set when the user says "show me", "open it", "let me see".
 
 ## Present results
@@ -80,9 +79,9 @@ User: "make a red car and show it to me"
 imagnx "a red car" --json --open
 ```
 
-User: "compare a sunset across all the image models"
+User: "generate a sunset across multiple models"
 ```bash
-imagnx "a sunset over mountains" --compare --json
+imagnx "a sunset over mountains" -m gpt-image-1.5,nano-banana -q auto --json
 ```
 
 User: "edit /tmp/photo.png to make the sky purple"

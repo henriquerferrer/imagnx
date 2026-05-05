@@ -1,5 +1,7 @@
-// Multi-layer prompt builder. Ported from SnapAI's src/utils/icon-prompt.ts
-// (MIT, https://github.com/betomoedano/snapai).
+// Multi-layer prompt builder. Ported from SnapAI's src/utils/icon-prompt.ts.
+// Copyright (c) Beto Moedano, MIT licensed. Full upstream license at
+// LICENSES/SnapAI-MIT.txt.
+// Source: https://github.com/betomoedano/snapai/blob/main/src/utils/icon-prompt.ts
 import {
   getStyleDirective,
   getStyleDescription,

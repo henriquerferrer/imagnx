@@ -6,7 +6,7 @@ import {
   getStyleDescription,
   validateStyleForCommand,
   type StyleId,
-} from "../../src/styles.js";
+} from "../../src/prompt/styles.js";
 import { InvalidArgs } from "../../src/errors.js";
 
 const ALL_STYLES: StyleId[] = [

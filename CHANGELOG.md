@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- `--compare` flag. It always failed against the default `quality=high` (rejected by `gemini-2.5-flash-image`, which only accepts `auto`) and no single global `--quality` value worked across all models. Use comma-separated `-m` for multi-model fan-out instead: `imagnx "<prompt>" -m gpt-image-1.5,nano-banana`.
+
+### Changed
+
+- Internal CLI restructure: `cli.ts` split into `pipeline.ts` (shared resolution + execution) and per-command files under `src/commands/`. `styles.ts` and `icon-prompt.ts` moved under `src/prompt/`. No user-visible behavior change.
+
 ## [0.2.0] - 2026-05-03
 
 ### Added

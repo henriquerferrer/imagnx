@@ -56,3 +56,19 @@ describe("imagnx icon", () => {
     expect(r.stderr).toContain("'glassy' only supported on: icon");
   });
 });
+
+describe("imagnx generate --style", () => {
+  it("--style pixel prepends a Style directive to the prompt", () => {
+    const r = runCli(["generate", "weather app", "--style", "pixel", "--dry-run"]);
+    expect(r.code).toBe(0);
+    expect(r.stderr).toContain("[dry-run] kind=generate");
+    expect(r.stderr).toContain("Style directive:");
+    expect(r.stderr).toContain("Style system: PIXEL");
+  });
+
+  it("--style minimalism prepends Style system: MINIMALISM", () => {
+    const r = runCli(["generate", "weather app", "--style", "minimalism", "--dry-run"]);
+    expect(r.code).toBe(0);
+    expect(r.stderr).toContain("Style system: MINIMALISM");
+  });
+});

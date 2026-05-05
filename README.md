@@ -15,7 +15,7 @@ npm install -g imagnx
 ```bash
 imagnx login                                         # interactive: prompts for keys, writes ~/.imagnx/credentials.toml
 imagnx "a cat astronaut on the moon"
-imagnx "a cat astronaut on the moon" --compare       # fan out across providers
+imagnx "a cat astronaut on the moon" -m gpt-image-1.5,nano-banana -q auto   # multi-model fan-out
 imagnx edit photo.png "give the cat a red helmet"
 ```
 
@@ -92,10 +92,12 @@ The skill auto-detects when the CLI is missing and installs it on first use.
 
 | Provider | Model | Edit | Mask | Sizes |
 |---|---|---|---|---|
-| OpenAI | `gpt-image-1.5` | ✓ | ✓ | up to 1536×1024 |
-| OpenAI | `gpt-image-2` | ✓ | ✓ | up to 3840×2160 |
+| OpenAI | `gpt-image-1.5` | ✓ | ✓ | 1024², 1536×1024, 1024×1536 |
+| OpenAI | `gpt-image-2` | ✓ | ✓ | (above) + 2048², 2048×1152, 3840×2160, 2160×3840 |
 | Google | `gemini-2.5-flash-image` | ✓ | ✗ | auto |
-| Google | `gemini-3-pro-image-preview` | ✓ | ✗ | up to 1024×1024 (tiers: 1k/2k/4k) |
+| Google | `gemini-3-pro-image-preview` | ✓ | ✗ | auto, 1024² |
+
+`auto` works on every model. Quality: OpenAI accepts `low`/`medium`/`high`/`auto`; `gemini-2.5-flash-image` accepts `auto` only; `gemini-3-pro-image-preview` accepts `1k` (default) / `2k` / `4k`.
 
 Aliases: `nano-banana` → `gemini-2.5-flash-image`, `nano-banana-pro` → `gemini-3-pro-image-preview`. See [`skill/reference.md`](skill/reference.md) for the full flag list and exit codes.
 

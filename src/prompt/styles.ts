@@ -1,6 +1,8 @@
 // Style preset library. Ported (with adaptations) from SnapAI's
-// src/utils/styleTemplates.ts (MIT, https://github.com/betomoedano/snapai).
-import { InvalidArgs } from "./errors.js";
+// src/utils/styleTemplates.ts. Copyright (c) Beto Moedano, MIT licensed.
+// Full upstream license at LICENSES/SnapAI-MIT.txt.
+// Source: https://github.com/betomoedano/snapai/blob/main/src/utils/styleTemplates.ts
+import { InvalidArgs } from "../errors.js";
 
 export type StyleId =
   | "minimalism" | "glassy" | "woven" | "geometric" | "neon" | "gradient"

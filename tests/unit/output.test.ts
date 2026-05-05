@@ -59,7 +59,7 @@ describe("resolveOutputPath", () => {
     expect(path).toBe("/tmp/x.png");
   });
 
-  it("explicit file with --compare throws InvalidArgs", () => {
+  it("explicit file path rejected when fanning out across multiple models", () => {
     expect(() =>
       resolveOutputPath({ ...ctx(), explicitOutput: "/tmp/x.png", fanOut: true }),
     ).toThrow(InvalidArgs);

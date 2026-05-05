@@ -15,26 +15,10 @@
 //
 // We still need STRING_FLAGS to detect subcommand-vs-flag-value when the user
 // writes `imagnx generate -m foo`: without it we'd inject `generate` again
-// before `foo` and break the call.
-export const KNOWN_SUBCOMMANDS = new Set([
-  "generate",
-  "edit",
-  "icon",
-  "models",
-  "init",
-  "login",
-  "config",
-]);
-
-export const STRING_FLAGS = new Set([
-  "-m", "--model",
-  "-s", "--size",
-  "-q", "--quality",
-  "--n",
-  "-o", "--output",
-  "--mask",
-  "--style",
-]);
+// before `foo` and break the call. STRING_FLAGS is auto-derived from every
+// subcommand's args in commands/index.ts so adding a new string flag (or a
+// new subcommand) doesn't require updating this file.
+import { SUBCOMMAND_NAMES, STRING_FLAGS } from "./commands/index.js";
 
 export function patchedRawArgs(argv: string[]): string[] {
   let skipNext = false;
@@ -50,7 +34,7 @@ export function patchedRawArgs(argv: string[]): string[] {
       continue;
     }
     // First non-flag positional: if it's already a subcommand, leave argv alone.
-    if (KNOWN_SUBCOMMANDS.has(arg)) return argv;
+    if (SUBCOMMAND_NAMES.includes(arg)) return argv;
     // Otherwise inject `generate` at position 0.
     return ["generate", ...argv];
   }
