@@ -21,6 +21,7 @@ import type { LoadedCredentials, ResolvedConfig } from "./config.js";
 import { narrowEnum } from "./narrow.js";
 import {
   openInViewer,
+  reconcileExtension,
   resolveOutputPath,
   writeImageBytes,
 } from "./output.js";
@@ -167,15 +168,22 @@ export async function executeAndOutput(
 
   const saved: SavedResult[] = [];
   for (const result of outcome.successes) {
-    const path = resolveOutputPath({
+    const actualExt = mimeToExt(result.mimeType);
+    const initial = resolveOutputPath({
       outputDir: cfg.outputDir,
       now,
       prompt: opts.prompt,
       modelId: result.modelId,
-      extension: mimeToExt(result.mimeType),
+      extension: actualExt,
       fanOut,
       explicitOutput: opts.output,
     });
+    const { path, originalExt } = reconcileExtension(initial, actualExt);
+    if (originalExt) {
+      process.stderr.write(
+        `warning: ${result.modelId} returned ${result.mimeType}; saved as ${path} (you specified .${originalExt})\n`,
+      );
+    }
     await writeImageBytes(path, result.bytes);
     saved.push({ path, modelId: result.modelId, mimeType: result.mimeType });
     if (opts.open || cfg.openAfter) {

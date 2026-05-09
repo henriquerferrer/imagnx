@@ -60,6 +60,33 @@ export function resolveOutputPath(ctx: OutputContext): string {
   return join(ctx.outputDir, dateFolder(ctx.now), defaultName(ctx));
 }
 
+const KNOWN_IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "webp"]);
+
+export interface ReconciledExt {
+  path: string;
+  // Set when the user's explicit -o ended in a known image extension that
+  // didn't match the actual returned mime (e.g. -o star.png on a model that
+  // returned image/jpeg). Caller should print a stderr warning so the user
+  // notices the on-disk path differs from what they asked for.
+  originalExt: string | null;
+}
+
+export function reconcileExtension(
+  path: string,
+  actualExt: "png" | "jpg" | "webp",
+): ReconciledExt {
+  const m = path.match(/\.([a-z0-9]+)$/i);
+  if (!m) return { path, originalExt: null };
+  const userExt = m[1]!.toLowerCase();
+  if (!KNOWN_IMAGE_EXTS.has(userExt)) return { path, originalExt: null };
+  const normalized = userExt === "jpeg" ? "jpg" : userExt;
+  if (normalized === actualExt) return { path, originalExt: null };
+  return {
+    path: path.replace(/\.[^.]+$/, `.${actualExt}`),
+    originalExt: userExt,
+  };
+}
+
 export async function writeImageBytes(path: string, bytes: Uint8Array): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   const tmp = `${path}.tmp.${process.pid}.${Date.now()}`;

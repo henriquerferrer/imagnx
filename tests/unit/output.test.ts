@@ -5,6 +5,7 @@ import { join } from "node:path";
 import {
   slugify,
   resolveOutputPath,
+  reconcileExtension,
   writeImageBytes,
   type OutputContext,
 } from "../../src/output.js";
@@ -69,6 +70,45 @@ describe("resolveOutputPath", () => {
     const path = resolveOutputPath({ ...ctx(), explicitOutput: dir });
     expect(path.startsWith(dir)).toBe(true);
     expect(path).toContain("a-cat-astronaut");
+  });
+});
+
+describe("reconcileExtension", () => {
+  it("leaves the path alone when extension matches", () => {
+    expect(reconcileExtension("/tmp/x.png", "png")).toEqual({
+      path: "/tmp/x.png",
+      originalExt: null,
+    });
+  });
+  it("treats .jpeg and .jpg as equivalent", () => {
+    expect(reconcileExtension("/tmp/x.jpeg", "jpg")).toEqual({
+      path: "/tmp/x.jpeg",
+      originalExt: null,
+    });
+  });
+  it("swaps .png to .jpg when model returned jpg, surfaces original", () => {
+    expect(reconcileExtension("/tmp/star.png", "jpg")).toEqual({
+      path: "/tmp/star.jpg",
+      originalExt: "png",
+    });
+  });
+  it("is case-insensitive on the user extension", () => {
+    expect(reconcileExtension("/tmp/STAR.PNG", "jpg")).toEqual({
+      path: "/tmp/STAR.jpg",
+      originalExt: "png",
+    });
+  });
+  it("leaves unknown/non-image extensions untouched", () => {
+    expect(reconcileExtension("/tmp/x.bin", "png")).toEqual({
+      path: "/tmp/x.bin",
+      originalExt: null,
+    });
+  });
+  it("leaves extensionless paths untouched", () => {
+    expect(reconcileExtension("/tmp/x", "png")).toEqual({
+      path: "/tmp/x",
+      originalExt: null,
+    });
   });
 });
 
