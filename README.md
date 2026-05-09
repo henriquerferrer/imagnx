@@ -75,7 +75,7 @@ Selecting an icon-only preset on a non-icon command exits with code 4 and a clea
 Install via [`npx skills`](https://github.com/vercel-labs/skills):
 
 ```bash
-npx skills add https://github.com/henriquerferrer/imagnx/tree/main/skill
+npx skills add henriquerferrer/imagnx --skill imagnx
 ```
 
 Or install manually (Claude Code example):
