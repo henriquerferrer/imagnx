@@ -63,6 +63,26 @@ describe("registry", () => {
     ).toThrow(UnsupportedFeature);
   });
 
+  it("validateRequest rejects mask with multiple ref images", () => {
+    expect(() =>
+      validateRequest("gpt-image-1.5", {
+        kind: "edit",
+        refCount: 2,
+        hasMask: true,
+      }),
+    ).toThrow(InvalidArgs);
+  });
+
+  it("validateRequest accepts mask with exactly one ref image", () => {
+    expect(() =>
+      validateRequest("gpt-image-1.5", {
+        kind: "edit",
+        refCount: 1,
+        hasMask: true,
+      }),
+    ).not.toThrow();
+  });
+
   it("validateRequest rejects invalid size", () => {
     expect(() =>
       validateRequest("gpt-image-1.5", { kind: "generate", size: "999x999" }),

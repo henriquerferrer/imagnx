@@ -137,8 +137,15 @@ export function validateRequest(
         `Model "${modelId}" supports at most ${cap.maxRefImages} reference images (got ${req.refCount})`,
       );
     }
-    if (req.hasMask && !cap.supportsMask) {
-      throw new UnsupportedFeature(modelId, "mask");
+    if (req.hasMask) {
+      if (!cap.supportsMask) {
+        throw new UnsupportedFeature(modelId, "mask");
+      }
+      if (req.refCount !== 1) {
+        throw new InvalidArgs(
+          `--mask requires exactly 1 reference image (got ${req.refCount})`,
+        );
+      }
     }
   }
 
