@@ -26,8 +26,7 @@
     "smoke": "tsx scripts/smoke.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json && chmod +x dist/cli.js",
-    "prepare": "npm run build",
-    "version": "node scripts/sync-skill-version.mjs && git add skill/SKILL.md"
+    "prepare": "npm run build"
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",

@@ -1,6 +1,6 @@
 # imagnx reference
 
-> Invocation: prefer `npx --yes imagnx@latest <args>` (no install, always current). The unprefixed `imagnx <args>` form below is shorthand and assumes a global install (`npm install -g imagnx`); both forms accept the same flags.
+> Invocation: always use `npx --yes imagnx@latest <args>` (no install needed). The unprefixed `imagnx <args>` form used in this reference is shorthand for readability; both forms accept the same flags.
 
 ## Commands
 
@@ -21,7 +21,7 @@
 | `-s, --size <size>` | string | Model-aware. `auto` works everywhere. gpt-image-1.5: `1024x1024`, `1536x1024`, `1024x1536`. gpt-image-2 adds `2048x2048`, `2048x1152`, `3840x2160`, `2160x3840`. gemini-3-pro-image-preview adds `1024x1024`. gemini-2.5-flash-image: `auto` only. |
 | `-q, --quality <q>` | string | Model-aware (see Quality by model below). gpt-image-*: `low`/`medium`/`high`/`auto`. gemini-2.5-flash-image: `auto` only. gemini-3-pro-image-preview: `1k`/`2k`/`4k`. |
 | `--n <num>` | int | Images per model. Default 1. |
-| `--mask <path>` | path | (edit only) PNG alpha mask. Requires exactly one ref image. |
+| `--mask <path>` | path | (edit only) PNG alpha mask. OpenAI models only. Requires exactly one ref image. |
 | `-o, --output <path>` | path | File or directory override. |
 | `--open` | bool | Open results in default viewer. |
 | `--json` | bool | Stable JSON output: `{"results":[...],"errors":[...]}`. |
@@ -43,6 +43,7 @@
 |---|---|---|---|
 | `<prompt>` |  | required | What the icon represents (positional) |
 | `--style <name>` |  |  | Preset name or free-form hint |
+| `--size <size>` |  | `1024x1024` | Image size override (model-aware; see Flags table for valid sizes per model) |
 | `--prompt-only` |  | `false` | Print enhanced prompt; no API call (works without keys) |
 | `--raw-prompt` | `-r` | `false` | Skip enhancement; send prompt verbatim |
 | `--use-icon-words` | `-i` | `false` | Include "icon"/"logo" wording (default: off to reduce padding) |
