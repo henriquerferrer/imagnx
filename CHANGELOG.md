@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-05-09
+
+### Fixed
+
+- nano-banana-pro returns `image/jpeg` but the CLI was honoring the user's `-o star.png` verbatim, so the bytes ended up in a file whose extension lied about its contents. The path is now corrected to match the real mime (`star.jpg`), a stderr warning calls out the swap, and the JSON payload reports the corrected path. `.jpeg` and `.jpg` are treated as equivalent; non-image extensions are left untouched.
+- `--mask requires exactly 1 reference image` now lives inside `validateRequest` alongside the `supportsMask` check, so both mask invariants share one source of truth and one set of exit codes (4 for the count mismatch, 3 for unsupported models).
+
+### Changed
+
+- Skill restructure (`skill/`):
+  - `skill/reference.md` → `skill/references/reference.md` to match the standard skills layout.
+  - SKILL.md frontmatter trimmed: dropped the unused `metadata.version` block and `disable-model-invocation: false` default. `allowed-tools` retained — it pre-authorizes `npx --yes imagnx*` and avoids a permission prompt on every call.
+  - Description tightened to lead with action verbs; SKIP clause kept explicit (vision tasks, charts).
+  - New "Common mistakes" section codifies the known footguns.
+  - Exit code 7 (`PartialFailure`) added to the recovery table.
+  - Per-preset list moved out of SKILL.md into the reference, single source of truth for the universal-vs-icon-only split.
+
+### Removed
+
+- `scripts/sync-skill-version.mjs` and the `version` lifecycle hook in package.json. Both existed solely to keep the now-removed `metadata.version` skill frontmatter line in sync with package.json bumps.
+
+## [0.4.0] - 2026-05-05
+
+### Changed
+
+- Skill (`skill/SKILL.md`) switched to `npx --yes imagnx@latest <args>` for all examples and the recovery table. Drops the implicit `npm install -g imagnx` prerequisite — the skill now works on a fresh machine with just Node ≥18.
+
 ## [0.3.0] - 2026-05-04
 
 ### Removed
