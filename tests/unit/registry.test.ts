@@ -5,9 +5,24 @@ import {
   listModels,
   resolveModelId,
   validateRequest,
+  validateAgainstCapabilities,
   KNOWN_MODELS,
+  type ModelCapabilities,
 } from "../../src/registry.js";
 import { UnsupportedFeature, InvalidArgs } from "../../src/errors.js";
+
+// Fabricated cap so we can exercise the "non-edit model" rejection path
+// without keeping a disabled real model in the registry.
+const NON_EDIT_CAP: ModelCapabilities = {
+  modelId: "fake-non-edit",
+  providerId: "openai",
+  supportsEdit: false,
+  supportsMask: false,
+  validSizes: ["1024x1024"],
+  defaultQuality: "auto",
+  qualityValues: ["auto"],
+  maxRefImages: 0,
+};
 
 describe("registry", () => {
   it("KNOWN_MODELS lists all supported model IDs", () => {
@@ -47,9 +62,9 @@ describe("registry", () => {
     ).not.toThrow();
   });
 
-  it("validateRequest rejects edit on non-edit model", () => {
+  it("validateAgainstCapabilities rejects edit on non-edit model", () => {
     expect(() =>
-      validateRequest("dall-e-3", { kind: "edit", refCount: 1 }),
+      validateAgainstCapabilities(NON_EDIT_CAP, { kind: "edit", refCount: 1 }),
     ).toThrow(UnsupportedFeature);
   });
 
@@ -103,6 +118,42 @@ describe("registry", () => {
     const c = modelCapabilities("gpt-image-2");
     expect(c.validSizes).toContain("2048x2048");
     expect(c.validSizes).toContain("3840x2160");
+  });
+
+  it("gpt-image-2 accepts a custom WxH within constraints", () => {
+    expect(() =>
+      validateRequest("gpt-image-2", { kind: "generate", size: "1280x720" }),
+    ).not.toThrow();
+  });
+
+  it("gpt-image-2 rejects custom size with non-16-multiple edge", () => {
+    expect(() =>
+      validateRequest("gpt-image-2", { kind: "generate", size: "1281x720" }),
+    ).toThrow(/multiples of 16/);
+  });
+
+  it("gpt-image-2 rejects custom size exceeding max edge", () => {
+    expect(() =>
+      validateRequest("gpt-image-2", { kind: "generate", size: "4096x1024" }),
+    ).toThrow(/max 3840/);
+  });
+
+  it("gpt-image-2 rejects custom size with aspect ratio over 3:1", () => {
+    expect(() =>
+      validateRequest("gpt-image-2", { kind: "generate", size: "3840x1024" }),
+    ).toThrow(/aspect/);
+  });
+
+  it("gpt-image-2 rejects custom size below min total pixels", () => {
+    expect(() =>
+      validateRequest("gpt-image-2", { kind: "generate", size: "256x256" }),
+    ).toThrow(/total pixels/);
+  });
+
+  it("gpt-image-1.5 rejects custom WxH (no customSize capability)", () => {
+    expect(() =>
+      validateRequest("gpt-image-1.5", { kind: "generate", size: "1280x720" }),
+    ).toThrow(/does not support size/);
   });
 
   it("resolveModelId maps nano-banana to gemini-2.5-flash-image", () => {

@@ -1,6 +1,14 @@
 import { InvalidArgs, UnsupportedFeature } from "./errors.js";
 import type { Quality, Size } from "./providers/types.js";
 
+export interface CustomSizeConstraints {
+  stepPx: number;
+  maxEdge: number;
+  maxAspectRatio: number;
+  minTotalPixels: number;
+  maxTotalPixels: number;
+}
+
 export interface ModelCapabilities {
   modelId: string;
   providerId: "openai" | "google";
@@ -10,7 +18,8 @@ export interface ModelCapabilities {
   defaultQuality: Quality;
   qualityValues: ReadonlyArray<Quality>;
   maxRefImages: number;
-  enabled?: boolean;
+  // Optional: model accepts arbitrary WxH within these bounds, on top of validSizes.
+  customSize?: CustomSizeConstraints;
 }
 
 const CAPABILITIES: Record<string, ModelCapabilities> = {
@@ -44,18 +53,13 @@ const CAPABILITIES: Record<string, ModelCapabilities> = {
     defaultQuality: "high",
     qualityValues: ["low", "medium", "high", "auto"],
     maxRefImages: 16,
-  },
-  "dall-e-3": {
-    // Negative-case fixture for non-edit models; also useful reference data.
-    modelId: "dall-e-3",
-    providerId: "openai",
-    supportsEdit: false,
-    supportsMask: false,
-    validSizes: ["1024x1024", "1792x1024", "1024x1792"],
-    defaultQuality: "auto",
-    qualityValues: ["auto"], // placeholder; entry is disabled
-    maxRefImages: 0,
-    enabled: false,
+    customSize: {
+      stepPx: 16,
+      maxEdge: 3840,
+      maxAspectRatio: 3,
+      minTotalPixels: 655_360,
+      maxTotalPixels: 8_294_400,
+    },
   },
   "gemini-2.5-flash-image": {
     modelId: "gemini-2.5-flash-image",
@@ -88,9 +92,9 @@ export function resolveModelId(input: string): string {
   return ALIASES[input] ?? input;
 }
 
-export const KNOWN_MODELS: ReadonlyArray<string> = Object.values(CAPABILITIES)
-  .filter((c) => c.enabled !== false)
-  .map((c) => c.modelId);
+export const KNOWN_MODELS: ReadonlyArray<string> = Object.values(CAPABILITIES).map(
+  (c) => c.modelId,
+);
 
 export function modelCapabilities(modelId: string): ModelCapabilities {
   const cap = CAPABILITIES[resolveModelId(modelId)];
@@ -109,7 +113,6 @@ export function providerForModel(modelId: string): "openai" | "google" {
 export function listModels(): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   for (const cap of Object.values(CAPABILITIES)) {
-    if (cap.enabled === false) continue;
     (out[cap.providerId] ??= []).push(cap.modelId);
   }
   return out;
@@ -119,11 +122,50 @@ export type ValidationRequest =
   | { kind: "generate"; size?: Size; quality?: Quality }
   | { kind: "edit"; refCount: number; size?: Size; hasMask?: boolean; quality?: Quality };
 
-export function validateRequest(
+const CUSTOM_SIZE_RE = /^(\d+)x(\d+)$/;
+
+function validateCustomSize(
   modelId: string,
+  size: string,
+  constraints: CustomSizeConstraints,
+): void {
+  const m = CUSTOM_SIZE_RE.exec(size);
+  if (!m) {
+    throw new InvalidArgs(
+      `Model "${modelId}" size "${size}" is not in WxH form (e.g. 1280x720)`,
+    );
+  }
+  const w = Number(m[1]);
+  const h = Number(m[2]);
+  if (w % constraints.stepPx !== 0 || h % constraints.stepPx !== 0) {
+    throw new InvalidArgs(
+      `Model "${modelId}" size "${size}" edges must be multiples of ${constraints.stepPx}`,
+    );
+  }
+  if (w > constraints.maxEdge || h > constraints.maxEdge) {
+    throw new InvalidArgs(
+      `Model "${modelId}" size "${size}" edge exceeds max ${constraints.maxEdge}`,
+    );
+  }
+  const aspect = Math.max(w / h, h / w);
+  if (aspect > constraints.maxAspectRatio) {
+    throw new InvalidArgs(
+      `Model "${modelId}" size "${size}" aspect ratio ${aspect.toFixed(2)}:1 exceeds max ${constraints.maxAspectRatio}:1`,
+    );
+  }
+  const total = w * h;
+  if (total < constraints.minTotalPixels || total > constraints.maxTotalPixels) {
+    throw new InvalidArgs(
+      `Model "${modelId}" size "${size}" total pixels ${total} outside [${constraints.minTotalPixels}, ${constraints.maxTotalPixels}]`,
+    );
+  }
+}
+
+export function validateAgainstCapabilities(
+  cap: ModelCapabilities,
   req: ValidationRequest,
 ): void {
-  const cap = modelCapabilities(modelId);
+  const modelId = cap.modelId;
 
   if (req.kind === "edit") {
     if (!cap.supportsEdit) {
@@ -150,9 +192,13 @@ export function validateRequest(
   }
 
   if (req.size && req.size !== "auto" && !cap.validSizes.includes(req.size)) {
-    throw new InvalidArgs(
-      `Model "${modelId}" does not support size "${req.size}". Valid: ${cap.validSizes.join(", ")}`,
-    );
+    if (cap.customSize) {
+      validateCustomSize(modelId, req.size, cap.customSize);
+    } else {
+      throw new InvalidArgs(
+        `Model "${modelId}" does not support size "${req.size}". Valid: ${cap.validSizes.join(", ")}`,
+      );
+    }
   }
 
   if (req.quality !== undefined && !cap.qualityValues.includes(req.quality)) {
@@ -160,4 +206,11 @@ export function validateRequest(
       `'${req.quality}' not valid for ${modelId}; valid: ${cap.qualityValues.join(", ")}`,
     );
   }
+}
+
+export function validateRequest(
+  modelId: string,
+  req: ValidationRequest,
+): void {
+  validateAgainstCapabilities(modelCapabilities(modelId), req);
 }
