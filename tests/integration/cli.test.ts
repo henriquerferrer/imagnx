@@ -285,3 +285,42 @@ describe("imagnx config", () => {
   });
 });
 
+describe("imagnx doctor", () => {
+  it("reports env as source when keys come from env", () => {
+    const r = runCli(["doctor"]);
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("openai: env (IMAGNX_OPENAI_API_KEY)");
+    expect(r.stdout).toContain("google: env (IMAGNX_GEMINI_API_KEY)");
+  });
+
+  it("reports missing when no key source resolves", () => {
+    const r = runCli(["doctor"], {
+      IMAGNX_OPENAI_API_KEY: "",
+      IMAGNX_GEMINI_API_KEY: "",
+      IMAGNX_GOOGLE_API_KEY: "",
+    });
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("openai: missing");
+    expect(r.stdout).toContain("google: missing");
+  });
+
+  it("--json emits a parseable report", () => {
+    const r = runCli(["doctor", "--json"]);
+    expect(r.code).toBe(0);
+    const parsed = JSON.parse(r.stdout) as {
+      providers: Array<{ provider: string; status: string; source: string }>;
+    };
+    expect(parsed.providers).toHaveLength(2);
+    expect(parsed.providers.every((p) => p.status === "ok")).toBe(true);
+  });
+
+  it("falls back to IMAGNX_GOOGLE_API_KEY when IMAGNX_GEMINI_API_KEY is empty", () => {
+    const r = runCli(["doctor"], {
+      IMAGNX_GEMINI_API_KEY: "",
+      IMAGNX_GOOGLE_API_KEY: "alt-key",
+    });
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("google: env (IMAGNX_GOOGLE_API_KEY)");
+  });
+});
+

@@ -8,6 +8,7 @@ import { modelsCmd } from "./models.js";
 import { initCmd } from "./init.js";
 import { loginCmd } from "./login.js";
 import { configCmd } from "./config.js";
+import { doctorCmd } from "./doctor.js";
 
 export const subCommands = {
   generate: generateCmd,
@@ -17,6 +18,7 @@ export const subCommands = {
   init: initCmd,
   login: loginCmd,
   config: configCmd,
+  doctor: doctorCmd,
 };
 
 export const SUBCOMMAND_NAMES: ReadonlyArray<string> = Object.keys(subCommands);
