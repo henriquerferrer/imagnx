@@ -7,12 +7,16 @@ import type {
 } from "./types.js";
 import { ProviderError, RateLimited } from "../errors.js";
 import { getProp } from "../narrow.js";
+import { RetryableError, withRetry, type RetryOptions } from "../retry.js";
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta";
 
 export interface GeminiProviderOptions {
   apiKey: string;
   baseUrl?: string;
+  retries?: number;
+  extraParams?: Record<string, unknown>;
+  sleep?: (ms: number) => Promise<void>;
 }
 
 const PRO_MODEL = "gemini-3-pro-image-preview";
@@ -29,8 +33,28 @@ function imageConfigFor(modelId: string, quality?: string): Record<string, unkno
   return { imageConfig: { imageSize: tier.toUpperCase() } };
 }
 
+class RetryableRateLimit extends RetryableError {
+  constructor(retryAfterMs?: number) {
+    super(`rate limited by google`, retryAfterMs);
+  }
+}
+
 export function createGeminiProvider(opts: GeminiProviderOptions): Provider {
   const baseUrl = opts.baseUrl ?? BASE;
+  const retryOpts: RetryOptions = { retries: opts.retries ?? 0, sleep: opts.sleep };
+  const extra = opts.extraParams;
+
+  function wrap<T>(fn: () => Promise<T>): Promise<T> {
+    return withRetry(fn, retryOpts).catch((e) => {
+      if (e instanceof RetryableRateLimit) {
+        throw new RateLimited("google", e.retryAfterMs);
+      }
+      if (e instanceof RetryableError) {
+        throw new ProviderError("google", e.message);
+      }
+      throw e;
+    });
+  }
 
   async function call(
     modelId: string,
@@ -43,10 +67,11 @@ export function createGeminiProvider(opts: GeminiProviderOptions): Provider {
       responseModalities: ["IMAGE"],
       ...(extraConfig ?? {}),
     };
-    const body = {
+    const body: Record<string, unknown> = {
       contents: [{ parts }],
       generationConfig,
     };
+    if (extra) Object.assign(body, extra);
 
     const timeoutMs = Number(process.env.IMAGNX_REQUEST_TIMEOUT_MS) || 120_000;
     let res: Response;
@@ -68,7 +93,11 @@ export function createGeminiProvider(opts: GeminiProviderOptions): Provider {
     }
 
     if (res.status === 429) {
-      throw new RateLimited("google");
+      const ra = res.headers.get("retry-after");
+      throw new RetryableRateLimit(ra ? Number(ra) * 1000 : undefined);
+    }
+    if (res.status >= 500 && res.status < 600) {
+      throw new RetryableError(`HTTP ${res.status}`);
     }
 
     let data: unknown;
@@ -122,25 +151,29 @@ export function createGeminiProvider(opts: GeminiProviderOptions): Provider {
     id: "google",
     models: ["gemini-2.5-flash-image", "gemini-3-pro-image-preview"],
     async generate(modelId, input: GenerateInput) {
-      return call(
-        modelId,
-        [{ text: input.prompt }],
-        input.prompt,
-        imageConfigFor(modelId, input.quality),
+      return wrap(() =>
+        call(
+          modelId,
+          [{ text: input.prompt }],
+          input.prompt,
+          imageConfigFor(modelId, input.quality),
+        ),
       );
     },
     async edit(modelId, input: EditInput) {
-      const parts: Array<Record<string, unknown>> = [];
-      for (const ref of input.refImages) {
-        parts.push({
-          inlineData: {
-            mimeType: "image/png",
-            data: Buffer.from(ref).toString("base64"),
-          },
-        });
-      }
-      parts.push({ text: input.prompt });
-      return call(modelId, parts, input.prompt, imageConfigFor(modelId, input.quality));
+      return wrap(() => {
+        const parts: Array<Record<string, unknown>> = [];
+        for (const ref of input.refImages) {
+          parts.push({
+            inlineData: {
+              mimeType: "image/png",
+              data: Buffer.from(ref).toString("base64"),
+            },
+          });
+        }
+        parts.push({ text: input.prompt });
+        return call(modelId, parts, input.prompt, imageConfigFor(modelId, input.quality));
+      });
     },
   };
 }

@@ -108,14 +108,65 @@ describe("imagnx generate", () => {
     expect(r.stderr).toContain("only supported on: icon");
   });
 
-  it("rejects unknown size with exit 4", () => {
+  it("rejects size that is neither a preset nor WxH form with exit 4", () => {
     const r = runCli([
       "generate", "weather",
-      "-s", "9999x9999",
+      "-s", "huge",
       "--dry-run",
     ]);
     expect(r.code).toBe(4);
-    expect(r.stderr).toContain("not a known preset");
+    expect(r.stderr).toContain("not a known preset or WxH form");
+  });
+
+  it("rejects --param without '=' with exit 4", () => {
+    const r = runCli([
+      "generate", "weather",
+      "--param", "novalue",
+      "--dry-run",
+    ]);
+    expect(r.code).toBe(4);
+    expect(r.stderr).toMatch(/missing '='/);
+  });
+
+  it("rejects --param with unknown provider scope with exit 4", () => {
+    const r = runCli([
+      "generate", "weather",
+      "--param", "azure:foo=bar",
+      "--dry-run",
+    ]);
+    expect(r.code).toBe(4);
+    expect(r.stderr).toContain("provider scope must be");
+  });
+
+  it("rejects --retries with non-integer value", () => {
+    const r = runCli([
+      "generate", "weather",
+      "--retries", "abc",
+      "--dry-run",
+    ]);
+    expect(r.code).toBe(4);
+    expect(r.stderr).toContain("--retries must be a non-negative integer");
+  });
+
+  it("rejects --concurrency=0 with exit 4", () => {
+    const r = runCli([
+      "generate", "weather",
+      "--concurrency", "0",
+      "--dry-run",
+    ]);
+    expect(r.code).toBe(4);
+    expect(r.stderr).toContain("--concurrency must be a positive integer");
+  });
+
+  it("rejects custom WxH on a model without customSize capability", () => {
+    const r = runCli([
+      "generate", "weather",
+      "-m", "gpt-image-1.5",
+      "-s", "1280x720",
+      "--dry-run",
+    ]);
+    expect(r.code).toBe(4);
+    expect(r.stderr).toContain("does not support size");
   });
 
   it("--openai-api-key flag works without IMAGNX_OPENAI_API_KEY env", () => {
@@ -233,3 +284,4 @@ describe("imagnx config", () => {
     expect(r.stderr).toContain("gemini key: ✗");
   });
 });
+

@@ -10,7 +10,13 @@ import {
   type SharedGenerateOpts,
 } from "../pipeline.js";
 import type { RunRequest } from "../runner.js";
-import { parseN, sharedArgs } from "./_shared.js";
+import {
+  parseN,
+  parseNonNegativeInt,
+  parsePositiveInt,
+  parseParamFlags,
+  sharedArgs,
+} from "./_shared.js";
 
 export interface EditOpts extends SharedGenerateOpts {
   refs: string[];
@@ -48,7 +54,7 @@ export async function runEdit(opts: EditOpts): Promise<void> {
     ? new Uint8Array(await readFile(opts.mask))
     : undefined;
 
-  const { cfg, modelIds, size, quality, n, providers } = resolveShared(
+  const { cfg, modelIds, size, quality, n, providers, concurrency } = resolveShared(
     opts,
     process.env,
   );
@@ -75,7 +81,13 @@ export async function runEdit(opts: EditOpts): Promise<void> {
     modelIds,
     input: { prompt: effectivePrompt, size, quality, n, refImages, mask },
   };
-  await executeAndOutput(req, cfg, providers, { ...opts, prompt: effectivePrompt });
+  await executeAndOutput(
+    req,
+    cfg,
+    providers,
+    { ...opts, prompt: effectivePrompt },
+    { concurrency },
+  );
 }
 
 export const editCmd = defineCommand({
@@ -118,6 +130,9 @@ export const editCmd = defineCommand({
         style: args.style,
         openaiApiKey: args["openai-api-key"],
         geminiApiKey: args["gemini-api-key"],
+        retries: parseNonNegativeInt(args.retries, "--retries"),
+        concurrency: parsePositiveInt(args.concurrency, "--concurrency"),
+        params: parseParamFlags(args.param),
       });
     });
   },

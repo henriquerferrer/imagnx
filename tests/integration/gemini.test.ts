@@ -83,7 +83,7 @@ describe("gemini provider", () => {
     ).rejects.toThrow();
   });
 
-  it("maps HTML response (503) to ProviderError with useful message", async () => {
+  it("maps 5xx to ProviderError with status in message (retries=0)", async () => {
     const mock = installFetchMock([
       {
         url: "",
@@ -101,7 +101,74 @@ describe("gemini provider", () => {
       caught = e;
     }
     expect(caught).toBeInstanceOf(ProviderError);
-    expect((caught as ProviderError).message).toMatch(/invalid json/i);
+    expect((caught as ProviderError).message).toMatch(/503/);
+  });
+
+  it("retries on 429 honoring retry-after when retries are enabled", async () => {
+    const sleeps: number[] = [];
+    const mock = installFetchMock([
+      {
+        url: "",
+        responseBody: JSON.stringify({ error: { message: "slow down" } }),
+        responseStatus: 429,
+        responseHeaders: { "content-type": "application/json", "retry-after": "3" },
+      },
+      {
+        url: "",
+        responseBody: FIX("gemini-generate.json"),
+        responseStatus: 200,
+        responseHeaders: { "content-type": "application/json" },
+      },
+    ]);
+    restore = mock.restore;
+    const provider = createGeminiProvider({
+      apiKey: "g-test",
+      retries: 1,
+      sleep: async (ms: number) => { sleeps.push(ms); },
+    });
+    const r = await provider.generate("gemini-2.5-flash-image", { prompt: "x" });
+    expect(r).toHaveLength(1);
+    expect(sleeps).toEqual([3000]);
+  });
+
+  it("forwards extraParams into the generate body alongside contents/generationConfig", async () => {
+    const mock = installFetchMock([
+      {
+        url: "",
+        responseBody: FIX("gemini-generate.json"),
+        responseStatus: 200,
+        responseHeaders: { "content-type": "application/json" },
+      },
+    ]);
+    restore = mock.restore;
+    const provider = createGeminiProvider({
+      apiKey: "g-test",
+      extraParams: { safetySettings: "BLOCK_NONE" },
+    });
+    await provider.generate("gemini-2.5-flash-image", { prompt: "x" });
+    const body = JSON.parse(String(mock.calls[0]!.init!.body)) as Record<string, unknown>;
+    expect(body.safetySettings).toBe("BLOCK_NONE");
+    expect(body).toHaveProperty("contents");
+    expect(body).toHaveProperty("generationConfig");
+  });
+
+  it("response decoder fails fast when candidates lack inlineData", async () => {
+    // Lock-in for the response-shape contract.
+    const mock = installFetchMock([
+      {
+        url: "",
+        responseBody: JSON.stringify({
+          candidates: [{ content: { parts: [{ text: "no image here" }] } }],
+        }),
+        responseStatus: 200,
+        responseHeaders: { "content-type": "application/json" },
+      },
+    ]);
+    restore = mock.restore;
+    const provider = createGeminiProvider({ apiKey: "g-test" });
+    await expect(
+      provider.generate("gemini-2.5-flash-image", { prompt: "x" }),
+    ).rejects.toThrow(/no images/i);
   });
 
   it("maps malformed JSON response to ProviderError with missing 'candidates' message", async () => {

@@ -9,7 +9,12 @@ import {
   type SharedGenerateOpts,
 } from "../pipeline.js";
 import type { RunRequest } from "../runner.js";
-import { parseN } from "./_shared.js";
+import {
+  parseN,
+  parseNonNegativeInt,
+  parsePositiveInt,
+  parseParamFlags,
+} from "./_shared.js";
 
 export interface IconOpts {
   prompt: string;
@@ -56,7 +61,7 @@ async function runIcon(opts: IconOpts & SharedGenerateOpts): Promise<void> {
 
   // Default size for icon mode is 1024x1024 (override possible via --size).
   const sizedOpts: SharedGenerateOpts = { ...opts, size: opts.size ?? "1024x1024" };
-  const { cfg, modelIds, size, quality, n, providers } = resolveShared(
+  const { cfg, modelIds, size, quality, n, providers, concurrency } = resolveShared(
     sizedOpts,
     process.env,
   );
@@ -77,10 +82,13 @@ async function runIcon(opts: IconOpts & SharedGenerateOpts): Promise<void> {
     modelIds,
     input: { prompt: built.enhancedPrompt, size, quality, n },
   };
-  await executeAndOutput(req, cfg, providers, {
-    ...opts,
-    prompt: built.enhancedPrompt,
-  });
+  await executeAndOutput(
+    req,
+    cfg,
+    providers,
+    { ...opts, prompt: built.enhancedPrompt },
+    { concurrency },
+  );
 }
 
 export const iconCmd = defineCommand({
@@ -162,6 +170,21 @@ export const iconCmd = defineCommand({
       description:
         "Gemini API key (one-shot; overrides IMAGNX_GEMINI_API_KEY and credentials.toml; not persisted)",
     },
+    retries: {
+      type: "string" as const,
+      description:
+        "Retry HTTP 429/5xx N times with exponential backoff + jitter (default 0)",
+    },
+    concurrency: {
+      type: "string" as const,
+      description:
+        "Max in-flight requests per provider during multi-model fan-out (default unlimited)",
+    },
+    param: {
+      type: "string" as const,
+      description:
+        "Repeatable extra provider param: key=value or provider:key=value",
+    },
   },
   run({ args }) {
     return withExitCode(() =>
@@ -181,6 +204,9 @@ export const iconCmd = defineCommand({
         dryRun: false,
         openaiApiKey: args["openai-api-key"] as string | undefined,
         geminiApiKey: args["gemini-api-key"] as string | undefined,
+        retries: parseNonNegativeInt(args.retries as string | undefined, "--retries"),
+        concurrency: parsePositiveInt(args.concurrency as string | undefined, "--concurrency"),
+        params: parseParamFlags(args.param as string | string[] | undefined),
       }),
     );
   },

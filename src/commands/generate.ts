@@ -17,7 +17,7 @@ export async function runGenerate(opts: SharedGenerateOpts): Promise<void> {
     effectivePrompt = `Style directive: ${getStyleDirective(id)}\n\n${opts.prompt}`;
   }
 
-  const { cfg, modelIds, size, quality, n, providers } = resolveShared(
+  const { cfg, modelIds, size, quality, n, providers, concurrency } = resolveShared(
     opts,
     process.env,
   );
@@ -38,7 +38,13 @@ export async function runGenerate(opts: SharedGenerateOpts): Promise<void> {
     modelIds,
     input: { prompt: effectivePrompt, size, quality, n },
   };
-  await executeAndOutput(req, cfg, providers, { ...opts, prompt: effectivePrompt });
+  await executeAndOutput(
+    req,
+    cfg,
+    providers,
+    { ...opts, prompt: effectivePrompt },
+    { concurrency },
+  );
 }
 
 export const generateCmd = defineCommand({

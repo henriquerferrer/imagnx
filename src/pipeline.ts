@@ -27,12 +27,19 @@ import {
 } from "./output.js";
 import { runFanOut } from "./runner.js";
 import type { RunRequest } from "./runner.js";
+import { createProgress } from "./progress.js";
 import { formatJsonOutput } from "./json.js";
 import type { SavedResult, SerializedFailure } from "./json.js";
 import { createOpenAIProvider } from "./providers/openai.js";
 import { createGeminiProvider } from "./providers/gemini.js";
 import type { Provider, Quality, Size } from "./providers/types.js";
 import { providerForModel, resolveModelId } from "./registry.js";
+
+export interface ParamEntry {
+  provider?: "openai" | "google";
+  key: string;
+  value: string;
+}
 
 export interface SharedGenerateOpts {
   prompt: string;
@@ -50,6 +57,9 @@ export interface SharedGenerateOpts {
   // the key in chat and persisting it on disk isn't wanted.
   openaiApiKey?: string;
   geminiApiKey?: string;
+  retries?: number;
+  concurrency?: number;
+  params?: ParamEntry[];
 }
 
 export interface ResolvedShared {
@@ -59,6 +69,7 @@ export interface ResolvedShared {
   quality: Quality;
   n: number;
   providers: Record<string, Provider>;
+  concurrency?: number;
 }
 
 export interface OutputOpts {
@@ -89,15 +100,19 @@ export function validateLocalImage(
   }
 }
 
+// Matches "WxH" with positive integers. Per-model bounds (multiple-of-16, max
+// edge, aspect, total pixels) live in registry.validateRequest so models can
+// opt-in independently.
+const CUSTOM_SIZE_RE = /^[1-9]\d*x[1-9]\d*$/;
+
 export function narrowSizeFlag(raw: string | undefined): Size | undefined {
   if (raw === undefined) return undefined;
   const v = narrowEnum(raw, VALID_SIZES);
-  if (v === undefined) {
-    throw new InvalidArgs(
-      `--size "${raw}" is not a known preset. Valid: ${VALID_SIZES.join(", ")}`,
-    );
-  }
-  return v;
+  if (v !== undefined) return v;
+  if (CUSTOM_SIZE_RE.test(raw)) return raw as Size;
+  throw new InvalidArgs(
+    `--size "${raw}" is not a known preset or WxH form. Valid presets: ${VALID_SIZES.join(", ")}`,
+  );
 }
 
 export function narrowQualityFlag(raw: string | undefined): Quality | undefined {
@@ -142,18 +157,37 @@ export function resolveShared(
 
   const neededProviders = new Set(modelIds.map((m) => providerForModel(m)));
   const providers: Record<string, Provider> = {};
+  const retries = opts.retries ?? 0;
   for (const pid of neededProviders) {
     // Per-call flag wins over env / credentials.toml (apiKeyFor handles those).
     const flagKey =
       pid === "openai" ? opts.openaiApiKey : opts.geminiApiKey;
     const key = flagKey || apiKeyFor(pid, env, creds);
+    const extraParams = extraParamsForProvider(opts.params, pid);
     providers[pid] =
       pid === "openai"
-        ? createOpenAIProvider({ apiKey: key })
-        : createGeminiProvider({ apiKey: key });
+        ? createOpenAIProvider({ apiKey: key, retries, extraParams })
+        : createGeminiProvider({ apiKey: key, retries, extraParams });
   }
 
-  return { cfg, modelIds, size, quality, n, providers };
+  return { cfg, modelIds, size, quality, n, providers, concurrency: opts.concurrency };
+}
+
+// --param can be unscoped (applies to every provider it's sent to) or scoped
+// to one provider. Only entries that apply to the given provider are returned.
+function extraParamsForProvider(
+  params: ParamEntry[] | undefined,
+  providerId: "openai" | "google",
+): Record<string, unknown> | undefined {
+  if (!params || params.length === 0) return undefined;
+  const out: Record<string, unknown> = {};
+  let any = false;
+  for (const p of params) {
+    if (p.provider && p.provider !== providerId) continue;
+    out[p.key] = p.value;
+    any = true;
+  }
+  return any ? out : undefined;
 }
 
 export async function executeAndOutput(
@@ -161,9 +195,20 @@ export async function executeAndOutput(
   cfg: ResolvedConfig,
   providers: Record<string, Provider>,
   opts: OutputOpts,
+  runOpts?: { concurrency?: number },
 ): Promise<void> {
   const now = new Date();
-  const outcome = await runFanOut(req, providers, providerForModel);
+  const progress = createProgress(req.modelIds, { json: opts.json });
+  progress.start();
+  let outcome;
+  try {
+    outcome = await runFanOut(req, providers, providerForModel, {
+      concurrency: runOpts?.concurrency,
+      onModelDone: (modelId, ok) => progress.done(modelId, ok),
+    });
+  } finally {
+    progress.stop();
+  }
   const fanOut = req.modelIds.length > 1;
 
   const saved: SavedResult[] = [];
